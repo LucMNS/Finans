@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  
+  --color-bg-page: #f1f5f9; 
+  --color-bg-card: #ffffff; 
+  --color-bg-icon: #e2e8f0; 
+  --color-text-main: #000000; 
+  --color-text-sub: #334155;
+  --color-border: #cbd5e1;
+}
+
+.dark {
+  --color-bg-page: #020617;
+  --color-bg-card: #0f172a;
+  --color-bg-icon: #1e293b;
+  --color-text-main: #ffffff;
+  --color-text-sub: #94a3b8;
+  --color-border: #1e293b;
+}
+
+body {
+  background-color: var(--color-bg-page);
+  color: var(--color-text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply transition-colors duration-300 overflow-x-hidden;
+}
+
+input, select, textarea {
+  color: var(--color-text-main);
+}
+
+option {
+  background-color: var(--color-bg-card);
+  color: var(--color-text-main);
+}
+
+* {
+  border-color: var(--color-border);
+}
