@@ -1,16 +1,41 @@
-# React + Vite
+# 💰 Finans — Controle Financeiro Pessoal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+O **Finans** é uma aplicação web moderna de gestão financeira, focada em performance, design responsivo e experiência do usuário (UX). Desenvolvido como um projeto de portfólio para demonstrar habilidades em tecnologias Full-Stack e boas práticas de desenvolvimento.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Tecnologias Utilizadas
 
-## React Compiler
+Este projeto utiliza o que há de mais moderno no ecossistema JavaScript:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React + Vite**: SPA rápida e otimizada.
+- **Supabase**: Backend-as-a-Service para Autenticação e Banco de Dados (PostgreSQL).
+- **Tailwind CSS**: Estilização baseada em utilitários para interface responsiva.
+- **Framer Motion**: Animações fluidas e reatividade visual.
+- **Recharts**: Visualização de dados com gráficos dinâmicos.
+- **Lucide React**: Biblioteca de ícones consistente.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ✨ Funcionalidades Principais
+
+- **Autenticação Segura**: Sistema de Login e Cadastro via Supabase com metadados de usuário.
+- **Gestão de Transações**: Adição e exclusão de receitas e despesas com **Optimistic UI** (atualizações instantâneas na interface).
+- **Dashboards Dinâmicos**: Resumo de saldo, saúde financeira e distribuição de gastos por categoria.
+- **Análise Temporal**: Histórico mensal e anual para acompanhamento da evolução financeira.
+- **PWA (Progressive Web App)**: Instalável em dispositivos móveis e desktop, funcionando como um app nativo.
+- **Dark Mode Nativo**: Persistência de tema (claro/escuro) via LocalStorage.
+- **Interface Responsiva**: Design adaptado para smartphones, tablets e computadores.
+
+---
+
+## 🛠️ Como Rodar o Projeto Localmente
+
+### Pré-requisitos
+- Node.js instalado.
+- Uma conta no [Supabase](https://supabase.com/).
+
+### Instalação
+1. Clone este repositório:
+   ```bash
+   git clone [https://github.com/LucMNS/finans.git](https://github.com/LucMNS/finans.git)
