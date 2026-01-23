@@ -40,5 +40,5 @@ Este projeto utiliza o que há de mais moderno no ecossistema JavaScript:
    ```bash
    git clone [https://github.com/LucMNS/finans.git](https://github.com/LucMNS/finans.git)
 
-   Ou acesse:
+2. Ou acesse:
    https://finans-controle.vercel.app/
