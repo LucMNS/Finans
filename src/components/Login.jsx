@@ -48,7 +48,7 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
       <motion.div layout className="w-full max-w-md bg-[var(--color-bg-card)] p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl border border-[var(--color-border)]">
         <header className="mb-8">
           <h1 className={`text-4xl font-black mb-2 ${mode === 'register' ? 'text-primary-500' : mode === 'update' ? 'text-orange-500' : 'text-emerald-500'}`}>
-            {mode === 'register' ? 'Criar Conta' : mode === 'reset' ? 'Recuperar' : mode === 'update' ? 'Nova Senha' : 'Finans.'}
+            {mode === 'register' ? 'Criar Conta' : mode === 'reset' ? 'Recuperar' : mode === 'update' ? 'Nova Senha' : 'Finans'}
           </h1>
           <p className="font-medium opacity-60">
             {mode === 'update' ? 'Escolha sua nova senha segura.' : 'Gerencie seu dinheiro com inteligência.'}
