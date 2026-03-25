@@ -8,6 +8,7 @@ export default function App() {
   const [isRecovering, setIsRecovering] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
+  
   useEffect(() => {
     // Aplica o tema
     if (isDarkMode) document.documentElement.classList.add('dark');

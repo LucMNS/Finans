@@ -1,101 +1,159 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { User, Mail, Lock, ArrowRight, KeyRound } from 'lucide-react';
+import { Github, AlertCircle, CheckCircle2 } from 'lucide-react';
+import './Login.css';
 
 export default function Login({ modeOverride, onFinishedUpdate }) {
-  const [mode, setMode] = useState(modeOverride || 'login'); 
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // --- SISTEMA DE NOTIFICAÇÕES (TOAST) ---
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
-  const handleSubmit = async (e) => {
+  const showToast = (message, type = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, visible: false }));
+    }, 4000); // Some após 4 segundos
+  };
+
+  const handleOAuth = async (provider) => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ provider });
+      if (error) throw error;
+    } catch (err) {
+      showToast("Erro ao conectar com " + provider + ": " + err.message, "error");
+    }
+  };
+
+  const handleSubmit = async (e, type) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === 'register') {
+      if (type === 'register') {
         const { error } = await supabase.auth.signUp({
           email, password,
           options: { data: { display_name: username } }
         });
         if (error) throw error;
-        alert("Conta criada! Tente entrar.");
-        setMode('login');
-      } else if (mode === 'login') {
+        showToast("Conta criada com sucesso! Você já pode entrar.", "success");
+        setIsSignUp(false); 
+      } else if (type === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-      } else if (mode === 'reset') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-        if (error) throw error;
-        alert("Link enviado! Verifique seu e-mail.");
-        setMode('login');
-      } else if (mode === 'update') {
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) throw error;
-        alert("Senha atualizada!");
-        if (onFinishedUpdate) onFinishedUpdate();
       }
     } catch (err) {
-      alert("Erro: " + err.message);
+      // Tradução de alguns erros comuns do Supabase para ficar mais amigável
+      let msg = err.message;
+      if (msg.includes("Invalid login credentials")) msg = "E-mail ou senha incorretos.";
+      if (msg.includes("User already registered")) msg = "Este e-mail já está em uso.";
+      
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!email) return showToast("Por favor, insira seu email no campo para recuperar a senha.", "error");
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+      if (error) throw error;
+      showToast("Link de recuperação enviado para seu e-mail!", "success");
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const GoogleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+    </svg>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg-page)] p-4 sm:p-6">
-      <motion.div layout className="w-full max-w-md bg-[var(--color-bg-card)] p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl border border-[var(--color-border)]">
-        <header className="mb-8">
-          <h1 className={`text-4xl font-black mb-2 ${mode === 'register' ? 'text-primary-500' : mode === 'update' ? 'text-orange-500' : 'text-emerald-500'}`}>
-            {mode === 'register' ? 'Criar Conta' : mode === 'reset' ? 'Recuperar' : mode === 'update' ? 'Nova Senha' : 'Finans.'}
-          </h1>
-          <p className="font-medium opacity-60">
-            {mode === 'update' ? 'Escolha sua nova senha segura.' : 'Gerencie seu dinheiro com inteligência.'}
-          </p>
-        </header>
+    <div className="login-wrapper relative">
+      
+      {/* Componente Toast Animado */}
+      <AnimatePresence>
+        {toast.visible && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 20, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-sm text-white ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}
+          >
+            {toast.type === 'error' ? <AlertCircle size={20} className="text-red-500" /> : <CheckCircle2 size={20} className="text-emerald-500" />}
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <AnimatePresence mode='wait'>
-            {mode === 'register' && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="relative">
-                <User className="absolute left-4 top-4 opacity-30" size={20} />
-                <input type="text" placeholder="Nome" required className="w-full p-4 pl-12 rounded-2xl bg-[var(--color-bg-page)] outline-none font-bold focus:ring-2 ring-primary-500 dark:text-white" value={username} onChange={e => setUsername(e.target.value)} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {mode !== 'update' && (
-            <div className="relative">
-              <Mail className="absolute left-4 top-4 opacity-30" size={20} />
-              <input type="email" placeholder="E-mail" required className="w-full p-4 pl-12 rounded-2xl bg-[var(--color-bg-page)] outline-none font-bold focus:ring-2 ring-primary-500 dark:text-white" value={email} onChange={e => setEmail(e.target.value)} />
+      <div className={`anim-container ${isSignUp ? 'active' : ''}`} id="container">
+        
+        {/* Painel de Cadastro */}
+        <div className="form-container sign-up">
+          <form onSubmit={(e) => handleSubmit(e, 'register')}>
+            <h1 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>Criar conta</h1>
+            <div className="social-icons">
+              <button type="button" onClick={() => handleOAuth('google')}><GoogleIcon /></button>
+              <button type="button" onClick={() => handleOAuth('github')}><Github size={20} /></button>
             </div>
-          )}
-
-          {mode !== 'reset' && (
-            <div className="relative">
-              <Lock className="absolute left-4 top-4 opacity-30" size={20} />
-              <input type="password" placeholder={mode === 'update' ? "Nova Senha" : "Senha"} required className="w-full p-4 pl-12 rounded-2xl bg-[var(--color-bg-page)] outline-none font-bold focus:ring-2 ring-primary-500 dark:text-white" value={password} onChange={e => setPassword(e.target.value)} />
-            </div>
-          )}
-
-          <button disabled={loading} className={`w-full py-4 rounded-2xl text-white font-black flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${mode === 'register' ? 'bg-primary-600 shadow-primary-500/30' : mode === 'update' ? 'bg-orange-600 shadow-orange-500/30' : 'bg-emerald-600 shadow-emerald-500/30'}`}>
-            {loading ? 'Processando...' : mode === 'register' ? 'Finalizar Cadastro' : mode === 'reset' ? 'Enviar Link' : mode === 'update' ? 'Confirmar Nova Senha' : 'Entrar no Painel'}
-            <ArrowRight size={20} />
-          </button>
-        </form>
-
-        <div className="mt-6 flex flex-col gap-3 items-center">
-          {mode === 'login' && (
-            <button onClick={() => setMode('reset')} className="text-xs font-black opacity-40 hover:opacity-100 flex items-center gap-2 uppercase tracking-widest transition-all">
-              <KeyRound size={12} /> Esqueci minha senha
-            </button>
-          )}
-          <button onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-sm font-black opacity-60 hover:text-primary-500 transition-all uppercase tracking-widest">
-            {mode === 'login' ? 'Criar nova conta' : 'Voltar para o Login'}
-          </button>
+            <span>Ou use seu email para registrar</span>
+            <input type="text" placeholder="Nome" required value={username} onChange={e => setUsername(e.target.value)} />
+            <input type="email" placeholder="Email" required value={email} onChange={e => setEmail(e.target.value)} />
+            <input type="password" placeholder="Senha" required value={password} onChange={e => setPassword(e.target.value)} />
+            <button type="submit" disabled={loading}>{loading ? 'Aguarde...' : 'Inscreva-se'}</button>
+            
+            <p className="mobile-only-toggle" onClick={() => setIsSignUp(false)}>Já tem conta? Entrar</p>
+          </form>
         </div>
-      </motion.div>
+
+        {/* Painel de Login */}
+        <div className="form-container sign-in">
+          <form onSubmit={(e) => handleSubmit(e, 'login')}>
+            <h1 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>Faça seu login</h1>
+            <div className="social-icons">
+              <button type="button" onClick={() => handleOAuth('google')}><GoogleIcon /></button>
+              <button type="button" onClick={() => handleOAuth('github')}><Github size={20} /></button>
+            </div>
+            <span>Ou use sua senha de e-mail</span>
+            <input type="email" placeholder="Email" required value={email} onChange={e => setEmail(e.target.value)} />
+            <input type="password" placeholder="Senha" required value={password} onChange={e => setPassword(e.target.value)} />
+            <a href="#" onClick={(e) => { e.preventDefault(); handleResetPassword(); }}>Esqueceu a senha?</a>
+            <button type="submit" disabled={loading}>{loading ? 'Aguarde...' : 'Entrar'}</button>
+
+            <p className="mobile-only-toggle" onClick={() => setIsSignUp(true)}>Criar nova conta</p>
+          </form>
+        </div>
+
+        {/* Painéis Deslizantes (Toggle) */}
+        <div className="toggle-container">
+          <div className="toggle">
+            <div className="toggle-panel toggle-left">
+              <h1 style={{ fontSize: '32px', fontWeight: 'bold' }}>Bem-vindo de volta!</h1>
+              <p style={{ color: '#fff' }}>Insira seus dados pessoais para usar todos os recursos do site</p>
+              <button type="button" className="hidden-btn" onClick={() => setIsSignUp(false)}>Entrar</button>
+            </div>
+            <div className="toggle-panel toggle-right">
+              <h1 style={{ fontSize: '32px', fontWeight: 'bold' }}>Olá, amigo!</h1>
+              <p style={{ color: '#fff' }}>Cadastre-se com seus dados pessoais para começar a gerenciar seu dinheiro</p>
+              <button type="button" className="hidden-btn" onClick={() => setIsSignUp(true)}>Inscreva-se</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
