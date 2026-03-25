@@ -6,19 +6,25 @@ import './Login.css';
 
 export default function Login({ modeOverride, onFinishedUpdate }) {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // --- SISTEMA DE NOTIFICAÇÕES (TOAST) ---
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  useEffect(() => {
+    if (modeOverride === 'update') {
+      setIsUpdateMode(true);
+    }
+  }, [modeOverride]);
 
   const showToast = (message, type = 'success') => {
     setToast({ visible: true, message, type });
     setTimeout(() => {
       setToast(prev => ({ ...prev, visible: false }));
-    }, 4000); // Some após 4 segundos
+    }, 4000); 
   };
 
   const handleOAuth = async (provider) => {
@@ -47,11 +53,9 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
         if (error) throw error;
       }
     } catch (err) {
-      // Tradução de alguns erros comuns do Supabase para ficar mais amigável
       let msg = err.message;
       if (msg.includes("Invalid login credentials")) msg = "E-mail ou senha incorretos.";
       if (msg.includes("User already registered")) msg = "Este e-mail já está em uso.";
-      
       showToast(msg, "error");
     } finally {
       setLoading(false);
@@ -72,6 +76,22 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
     }
   };
 
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      showToast("Senha atualizada com sucesso!", "success");
+      setIsUpdateMode(false);
+      if (onFinishedUpdate) onFinishedUpdate();
+    } catch (err) {
+      showToast("Erro ao atualizar senha: " + err.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const GoogleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
       <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -81,18 +101,39 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
     </svg>
   );
 
+  // SE FOR RECUPERAÇÃO DE SENHA, MOSTRA ESSA TELA EXCLUSIVA
+  if (isUpdateMode) {
+    return (
+      <div className="login-wrapper relative">
+        <AnimatePresence>
+          {toast.visible && (
+            <motion.div initial={{ opacity: 0, y: -50, scale: 0.9 }} animate={{ opacity: 1, y: 20, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-sm text-white ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}>
+              {toast.type === 'error' ? <AlertCircle size={20} className="text-red-500" /> : <CheckCircle2 size={20} className="text-emerald-500" />}
+              {toast.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="anim-container active" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <form onSubmit={handleUpdatePassword} style={{ width: '100%', maxWidth: '400px', padding: '0 40px' }}>
+            <h1 style={{ color: '#fff', fontSize: '28px', fontWeight: 'bold', textAlign: 'center' }}>Nova Senha</h1>
+            <p style={{ color: '#a1a1aa', textAlign: 'center', marginBottom: '20px' }}>Digite a sua nova senha segura.</p>
+            <input type="password" placeholder="Sua nova senha" required value={password} onChange={e => setPassword(e.target.value)} />
+            <button type="submit" style={{ width: '100%' }} disabled={loading}>
+              {loading ? 'Atualizando...' : 'Confirmar Nova Senha'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // SE NÃO FOR RECUPERAÇÃO, MOSTRA O LOGIN ANIMADO NORMAL
   return (
     <div className="login-wrapper relative">
-      
-      {/* Componente Toast Animado */}
       <AnimatePresence>
         {toast.visible && (
-          <motion.div 
-            initial={{ opacity: 0, y: -50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 20, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-sm text-white ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}
-          >
+          <motion.div initial={{ opacity: 0, y: -50, scale: 0.9 }} animate={{ opacity: 1, y: 20, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-sm text-white ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}>
             {toast.type === 'error' ? <AlertCircle size={20} className="text-red-500" /> : <CheckCircle2 size={20} className="text-emerald-500" />}
             {toast.message}
           </motion.div>
@@ -101,7 +142,6 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
 
       <div className={`anim-container ${isSignUp ? 'active' : ''}`} id="container">
         
-        {/* Painel de Cadastro */}
         <div className="form-container sign-up">
           <form onSubmit={(e) => handleSubmit(e, 'register')}>
             <h1 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>Criar conta</h1>
@@ -114,12 +154,10 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
             <input type="email" placeholder="Email" required value={email} onChange={e => setEmail(e.target.value)} />
             <input type="password" placeholder="Senha" required value={password} onChange={e => setPassword(e.target.value)} />
             <button type="submit" disabled={loading}>{loading ? 'Aguarde...' : 'Inscreva-se'}</button>
-            
             <p className="mobile-only-toggle" onClick={() => setIsSignUp(false)}>Já tem conta? Entrar</p>
           </form>
         </div>
 
-        {/* Painel de Login */}
         <div className="form-container sign-in">
           <form onSubmit={(e) => handleSubmit(e, 'login')}>
             <h1 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>Faça seu login</h1>
@@ -132,12 +170,10 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
             <input type="password" placeholder="Senha" required value={password} onChange={e => setPassword(e.target.value)} />
             <a href="#" onClick={(e) => { e.preventDefault(); handleResetPassword(); }}>Esqueceu a senha?</a>
             <button type="submit" disabled={loading}>{loading ? 'Aguarde...' : 'Entrar'}</button>
-
             <p className="mobile-only-toggle" onClick={() => setIsSignUp(true)}>Criar nova conta</p>
           </form>
         </div>
 
-        {/* Painéis Deslizantes (Toggle) */}
         <div className="toggle-container">
           <div className="toggle">
             <div className="toggle-panel toggle-left">
