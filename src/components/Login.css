@@ -1,0 +1,339 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+.login-wrapper * {
+    font-family: 'Montserrat', sans-serif;
+    box-sizing: border-box;
+}
+
+/* Fundo escuro padrão Finans */
+.login-wrapper {
+    background-color: #09090b; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Card escuro com borda sutil */
+.anim-container {
+    background-color: #18181b; 
+    border-radius: 30px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    width: 768px;
+    max-width: 90%;
+    min-height: 480px;
+    color: #fff;
+}
+
+.anim-container p {
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.3px;
+    margin: 20px 0;
+    color: #a1a1aa; 
+}
+
+.anim-container span {
+    font-size: 12px;
+    color: #a1a1aa;
+}
+
+.anim-container a {
+    color: #10b981; 
+    font-size: 13px;
+    text-decoration: none;
+    margin: 15px 0 10px;
+    font-weight: 600;
+    transition: color 0.3s;
+}
+
+.anim-container a:hover {
+    color: #34d399; 
+}
+
+/* Botões de Ação */
+.anim-container button {
+    background-color: #10b981; 
+    color: #fff;
+    font-size: 12px;
+    padding: 12px 45px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.3s;
+}
+
+.anim-container button:active {
+    transform: scale(0.95);
+}
+
+.anim-container button:hover {
+    background-color: #059669; 
+}
+
+/* Botões do painel deslizante */
+.anim-container button.hidden-btn {
+    background-color: transparent;
+    border-color: #fff;
+}
+
+.anim-container button.hidden-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Formulários escuros */
+.anim-container form {
+    background-color: #18181b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 40px;
+    height: 100%;
+}
+
+.anim-container form h1 {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+/* Inputs do formulário */
+.anim-container input {
+    background-color: #27272a; 
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 8px 0;
+    padding: 12px 15px;
+    font-size: 13px;
+    border-radius: 12px;
+    width: 100%;
+    outline: none;
+    color: #fff;
+    transition: border-color 0.3s;
+}
+
+.anim-container input:focus {
+    border-color: #10b981;
+}
+
+.anim-container input::placeholder {
+    color: #a1a1aa;
+}
+
+.form-container {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: all 0.6s ease-in-out;
+}
+
+.sign-in {
+    left: 0;
+    width: 50%;
+    z-index: 2;
+}
+
+.anim-container.active .sign-in {
+    transform: translateX(100%);
+}
+
+.sign-up {
+    left: 0;
+    width: 50%;
+    opacity: 0;
+    z-index: 1;
+}
+
+.anim-container.active .sign-up {
+    transform: translateX(100%);
+    opacity: 1;
+    z-index: 5;
+    animation: move 0.6s;
+}
+
+@keyframes move {
+    0%, 49.99% { opacity: 0; z-index: 1; }
+    50%, 100% { opacity: 1; z-index: 5; }
+}
+
+/* Ícones Sociais (Google/GitHub) */
+.social-icons {
+    margin: 20px 0;
+}
+
+.social-icons button {
+    background-color: #27272a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 5px;
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    color: #fff;
+    transition: all 0.3s ease;
+    margin-top: 0; 
+}
+
+.social-icons button:hover {
+    background-color: #3f3f46;
+    border-color: #10b981;
+    transform: translateY(-2px);
+}
+
+.toggle-container {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+    transition: all 0.6s ease-in-out;
+    border-radius: 150px 0 0 100px;
+    z-index: 1000;
+}
+
+.anim-container.active .toggle-container {
+    transform: translateX(-100%);
+    border-radius: 0 150px 100px 0;
+}
+
+.toggle {
+    background: linear-gradient(to right, #6366f1, #10b981);
+    color: #fff;
+    position: relative;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    transform: translateX(0);
+    transition: all 0.6s ease-in-out;
+}
+
+.anim-container.active .toggle {
+    transform: translateX(50%);
+}
+
+.toggle-panel {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 30px;
+    text-align: center;
+    top: 0;
+    transform: translateX(0);
+    transition: all 0.6s ease-in-out;
+}
+
+.toggle-panel h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.toggle-left {
+    transform: translateX(-200%);
+}
+
+.anim-container.active .toggle-left {
+    transform: translateX(0);
+}
+
+.toggle-right {
+    right: 0;
+    transform: translateX(0);
+}
+
+.anim-container.active .toggle-right {
+    transform: translateX(200%);
+}
+
+/* Ocultar o botão de alternância nativamente no Desktop */
+.mobile-only-toggle {
+    display: none;
+}
+
+/* ========================================= */
+/* MODO MOBILE (Telas menores que 768px) */
+/* ========================================= */
+@media (max-width: 768px) {
+    .anim-container {
+        width: 100%;
+        max-width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        border: none;
+    }
+
+    /* Oculta o painel de sobreposição animado */
+    .toggle-container {
+        display: none; 
+    }
+
+    /* Os formulários ocupam a tela toda */
+    .form-container {
+        width: 100%;
+        transition: opacity 0.4s ease-in-out;
+    }
+
+    .anim-container form {
+        padding: 0 20px;
+    }
+
+    /* Lógica de Transição (Opacidade no lugar de movimento lateral) */
+    .sign-in {
+        left: 0;
+        opacity: 1;
+        z-index: 2;
+    }
+
+    .sign-up {
+        left: 0;
+        opacity: 0;
+        z-index: 1;
+        pointer-events: none; /* Evita clicar em botões invisíveis */
+        transform: translateX(0);
+    }
+
+    .anim-container.active .sign-in {
+        transform: translateX(0);
+        opacity: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .anim-container.active .sign-up {
+        transform: translateX(0);
+        opacity: 1;
+        z-index: 5;
+        pointer-events: auto;
+        animation: none; /* Remove a animação desktop */
+    }
+
+    /* Exibe o botão de alternância focado no Mobile */
+    .mobile-only-toggle {
+        display: block;
+        margin-top: 25px;
+        color: #10b981;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+}
