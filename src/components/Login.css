@@ -5,7 +5,6 @@
     box-sizing: border-box;
 }
 
-/* Fundo escuro padrão Finans */
 .login-wrapper {
     background-color: #09090b; 
     display: flex;
@@ -16,7 +15,6 @@
     width: 100vw;
 }
 
-/* Card escuro com borda sutil */
 .anim-container {
     background-color: #18181b; 
     border-radius: 30px;
@@ -56,7 +54,6 @@
     color: #34d399; 
 }
 
-/* Botões de Ação */
 .anim-container button {
     background-color: #10b981; 
     color: #fff;
@@ -90,7 +87,6 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Formulários escuros */
 .anim-container form {
     background-color: #18181b;
     display: flex;
@@ -108,7 +104,6 @@
     margin-bottom: 10px;
 }
 
-/* Inputs do formulário */
 .anim-container input {
     background-color: #27272a; 
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -166,7 +161,6 @@
     50%, 100% { opacity: 1; z-index: 5; }
 }
 
-/* Ícones Sociais (Google/GitHub) */
 .social-icons {
     margin: 20px 0;
 }
@@ -263,14 +257,10 @@
     transform: translateX(200%);
 }
 
-/* Ocultar o botão de alternância nativamente no Desktop */
 .mobile-only-toggle {
     display: none;
 }
 
-/* ========================================= */
-/* MODO MOBILE (Telas menores que 768px) */
-/* ========================================= */
 @media (max-width: 768px) {
     .anim-container {
         width: 100%;
@@ -280,12 +270,10 @@
         border: none;
     }
 
-    /* Oculta o painel de sobreposição animado */
     .toggle-container {
         display: none; 
     }
 
-    /* Os formulários ocupam a tela toda */
     .form-container {
         width: 100%;
         transition: opacity 0.4s ease-in-out;
@@ -295,7 +283,6 @@
         padding: 0 20px;
     }
 
-    /* Lógica de Transição (Opacidade no lugar de movimento lateral) */
     .sign-in {
         left: 0;
         opacity: 1;
@@ -306,7 +293,7 @@
         left: 0;
         opacity: 0;
         z-index: 1;
-        pointer-events: none; /* Evita clicar em botões invisíveis */
+        pointer-events: none;
         transform: translateX(0);
     }
 
@@ -322,10 +309,9 @@
         opacity: 1;
         z-index: 5;
         pointer-events: auto;
-        animation: none; /* Remove a animação desktop */
+        animation: none;
     }
 
-    /* Exibe o botão de alternância focado no Mobile */
     .mobile-only-toggle {
         display: block;
         margin-top: 25px;
