@@ -11,14 +11,13 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // --- SISTEMA DE NOTIFICAÇÕES (TOAST) ---
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
     setToast({ visible: true, message, type });
     setTimeout(() => {
       setToast(prev => ({ ...prev, visible: false }));
-    }, 4000); // Some após 4 segundos
+    }, 4000);
   };
 
   const handleOAuth = async (provider) => {
@@ -47,7 +46,6 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
         if (error) throw error;
       }
     } catch (err) {
-      // Tradução de alguns erros comuns do Supabase para ficar mais amigável
       let msg = err.message;
       if (msg.includes("Invalid login credentials")) msg = "E-mail ou senha incorretos.";
       if (msg.includes("User already registered")) msg = "Este e-mail já está em uso.";
@@ -84,7 +82,6 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
   return (
     <div className="login-wrapper relative">
       
-      {/* Componente Toast Animado */}
       <AnimatePresence>
         {toast.visible && (
           <motion.div 
@@ -101,7 +98,6 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
 
       <div className={`anim-container ${isSignUp ? 'active' : ''}`} id="container">
         
-        {/* Painel de Cadastro */}
         <div className="form-container sign-up">
           <form onSubmit={(e) => handleSubmit(e, 'register')}>
             <h1 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>Criar conta</h1>
@@ -119,7 +115,6 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
           </form>
         </div>
 
-        {/* Painel de Login */}
         <div className="form-container sign-in">
           <form onSubmit={(e) => handleSubmit(e, 'login')}>
             <h1 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>Faça seu login</h1>
@@ -137,7 +132,6 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
           </form>
         </div>
 
-        {/* Painéis Deslizantes (Toggle) */}
         <div className="toggle-container">
           <div className="toggle">
             <div className="toggle-panel toggle-left">
