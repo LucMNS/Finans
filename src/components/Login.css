@@ -14,6 +14,24 @@
     flex-direction: column;
     height: 100vh;
     width: 100vw;
+    overflow: hidden;
+}
+
+/* --- EFEITO DE BRILHO RESPONSIVO AO MOUSE --- */
+.mouse-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(
+      circle 800px at var(--mouse-x, 50vw) var(--mouse-y, 50vh),
+      rgba(99, 102, 241, 0.15), 
+      rgba(16, 185, 129, 0.08), 
+      transparent 50%
+    );
 }
 
 /* Card escuro com borda sutil */
@@ -28,6 +46,7 @@
     max-width: 90%;
     min-height: 480px;
     color: #fff;
+    z-index: 10;
 }
 
 .anim-container p {
@@ -38,12 +57,12 @@
     color: #a1a1aa; 
 }
 
-.anim-container span {
+.anim-container span.divider-text {
     font-size: 12px;
     color: #a1a1aa;
 }
 
-.anim-container a {
+.anim-container a.forgot-pass {
     color: #10b981; 
     font-size: 13px;
     text-decoration: none;
@@ -52,12 +71,12 @@
     transition: color 0.3s;
 }
 
-.anim-container a:hover {
+.anim-container a.forgot-pass:hover {
     color: #34d399; 
 }
 
 /* Botões de Ação */
-.anim-container button {
+.anim-container button.main-btn {
     background-color: #10b981; 
     color: #fff;
     font-size: 12px;
@@ -72,11 +91,11 @@
     transition: transform 0.1s, background-color 0.3s;
 }
 
-.anim-container button:active {
+.anim-container button.main-btn:active {
     transform: scale(0.95);
 }
 
-.anim-container button:hover {
+.anim-container button.main-btn:hover {
     background-color: #059669; 
 }
 
@@ -84,6 +103,16 @@
 .anim-container button.hidden-btn {
     background-color: transparent;
     border-color: #fff;
+    color: #fff;
+    font-size: 12px;
+    padding: 12px 45px;
+    border: 1px solid #fff;
+    border-radius: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 .anim-container button.hidden-btn:hover {
@@ -92,7 +121,7 @@
 
 /* Formulários escuros */
 .anim-container form {
-    background-color: #18181b;
+    background-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -135,6 +164,7 @@
     top: 0;
     height: 100%;
     transition: all 0.6s ease-in-out;
+    background-color: #18181b;
 }
 
 .sign-in {
@@ -184,7 +214,7 @@
     padding: 0;
     color: #fff;
     transition: all 0.3s ease;
-    margin-top: 0; 
+    cursor: pointer;
 }
 
 .social-icons button:hover {
@@ -263,55 +293,95 @@
     transform: translateX(200%);
 }
 
-/* Ocultar o botão de alternância nativamente no Desktop */
 .mobile-only-toggle {
     display: none;
 }
 
 /* ========================================= */
-/* MODO MOBILE (Telas menores que 768px) */
+/* MODO MOBILE (Telas menores que 768px)     */
+/* Design de APP: Bottom Sheet de Vidro      */
 /* ========================================= */
 @media (max-width: 768px) {
+    .login-wrapper {
+        justify-content: flex-end; /* Empurra o conteúdo para baixo */
+        padding-top: 50px;
+    }
+
+    /* O fundo agora anima sozinho no celular, criando uma aura pulsante superior */
+    .mouse-glow {
+        /* Deixamos a "tela" da luz 40% maior para esconder os cortes quando ela encolher */
+        top: -20%;
+        left: -20%;
+        width: 140%;
+        height: 140%;
+        animation: mobilePulse 8s infinite alternate ease-in-out;
+        background: radial-gradient(
+            circle 500px at 50% 30%, /* Aumentamos o tamanho da luz de 400px para 500px */
+            rgba(99, 102, 241, 0.25), 
+            rgba(16, 185, 129, 0.15), 
+            transparent 70%
+        ) !important;
+    }
+
+    @keyframes mobilePulse {
+        /* Como a tela base é enorme (140%), mesmo em 0.8 as bordas não aparecem */
+        0% { transform: scale(0.8); opacity: 0.6; }
+        100% { transform: scale(1.1); opacity: 1; }
+    }
+
+    /* Transformando o container em um cartão flutuante de vidro */
     .anim-container {
         width: 100%;
         max-width: 100%;
-        min-height: 100vh;
-        border-radius: 0;
+        min-height: 80vh;
+        border-radius: 40px 40px 0 0; /* Arredondado apenas em cima */
         border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(24, 24, 27, 0.65); /* Fundo mais transparente */
+        backdrop-filter: blur(20px); /* Efeito de vidro embaçado */
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+        animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Oculta o painel de sobreposição animado */
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
     .toggle-container {
         display: none; 
     }
 
-    /* Os formulários ocupam a tela toda */
     .form-container {
         width: 100%;
-        transition: opacity 0.4s ease-in-out;
+        background-color: transparent; /* Deixa o vidro aparecer */
+        transition: opacity 0.4s ease-in-out, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .anim-container form {
-        padding: 0 20px;
+        padding: 40px 30px;
+        justify-content: flex-start; /* Empurra elementos para cima */
     }
 
-    /* Lógica de Transição (Opacidade no lugar de movimento lateral) */
+    /* Animações de arrastar fluidas */
     .sign-in {
         left: 0;
         opacity: 1;
         z-index: 2;
+        transform: translateX(0);
     }
 
     .sign-up {
         left: 0;
         opacity: 0;
         z-index: 1;
-        pointer-events: none; /* Evita clicar em botões invisíveis */
-        transform: translateX(0);
+        pointer-events: none;
+        transform: translateX(20%); /* Vem levemente da direita */
     }
 
     .anim-container.active .sign-in {
-        transform: translateX(0);
+        transform: translateX(-20%); /* Foge pra esquerda */
         opacity: 0;
         z-index: 1;
         pointer-events: none;
@@ -322,18 +392,33 @@
         opacity: 1;
         z-index: 5;
         pointer-events: auto;
-        animation: none; /* Remove a animação desktop */
+        animation: none; 
     }
 
-    /* Exibe o botão de alternância focado no Mobile */
+    /* O botão de alternância vira uma pílula nativa no rodapé do form */
     .mobile-only-toggle {
         display: block;
-        margin-top: 25px;
-        color: #10b981;
-        font-size: 14px;
-        font-weight: 700;
+        margin-top: auto; 
+        padding: 18px 20px;
+        width: 100%;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        color: #a1a1aa;
+        font-size: 13px;
+        font-weight: 500;
         cursor: pointer;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        transition: background 0.3s;
+    }
+
+    .mobile-only-toggle span {
+        color: #10b981;
+        font-weight: 800;
+        margin-left: 6px;
+    }
+
+    .mobile-only-toggle:active {
+        background: rgba(255, 255, 255, 0.08);
     }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { Github, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -6,13 +6,15 @@ import './Login.css';
 
 export default function Login({ modeOverride, onFinishedUpdate }) {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [isUpdateMode, setIsUpdateMode] = useState(false); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  // --- REFERÊNCIA PARA O FUNDO ANIMADO ---
+  const wrapperRef = useRef(null);
 
   useEffect(() => {
     if (modeOverride === 'update') {
@@ -25,6 +27,14 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
     setTimeout(() => {
       setToast(prev => ({ ...prev, visible: false }));
     }, 4000); 
+  };
+
+  // --- FUNÇÃO QUE CAPTURA O MOUSE E MANDA PARA O CSS ---
+  const handleMouseMove = (e) => {
+    if (!wrapperRef.current) return;
+    const { clientX, clientY } = e;
+    wrapperRef.current.style.setProperty('--mouse-x', `${clientX}px`);
+    wrapperRef.current.style.setProperty('--mouse-y', `${clientY}px`);
   };
 
   const handleOAuth = async (provider) => {
@@ -101,10 +111,11 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
     </svg>
   );
 
-  // SE FOR RECUPERAÇÃO DE SENHA, MOSTRA ESSA TELA EXCLUSIVA
   if (isUpdateMode) {
     return (
-      <div className="login-wrapper relative">
+      <div className="login-wrapper relative" ref={wrapperRef} onMouseMove={handleMouseMove}>
+        <div className="mouse-glow"></div> 
+        
         <AnimatePresence>
           {toast.visible && (
             <motion.div initial={{ opacity: 0, y: -50, scale: 0.9 }} animate={{ opacity: 1, y: 20, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-sm text-white ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}>
@@ -119,7 +130,7 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
             <h1 style={{ color: '#fff', fontSize: '28px', fontWeight: 'bold', textAlign: 'center' }}>Nova Senha</h1>
             <p style={{ color: '#a1a1aa', textAlign: 'center', marginBottom: '20px' }}>Digite a sua nova senha segura.</p>
             <input type="password" placeholder="Sua nova senha" required value={password} onChange={e => setPassword(e.target.value)} />
-            <button type="submit" style={{ width: '100%' }} disabled={loading}>
+            <button type="submit" className="main-btn" style={{ width: '100%' }} disabled={loading}>
               {loading ? 'Atualizando...' : 'Confirmar Nova Senha'}
             </button>
           </form>
@@ -128,9 +139,10 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
     );
   }
 
-  // SE NÃO FOR RECUPERAÇÃO, MOSTRA O LOGIN ANIMADO NORMAL
   return (
-    <div className="login-wrapper relative">
+    <div className="login-wrapper relative" ref={wrapperRef} onMouseMove={handleMouseMove}>
+      <div className="mouse-glow"></div> 
+
       <AnimatePresence>
         {toast.visible && (
           <motion.div initial={{ opacity: 0, y: -50, scale: 0.9 }} animate={{ opacity: 1, y: 20, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-sm text-white ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}>
@@ -149,12 +161,16 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
               <button type="button" onClick={() => handleOAuth('google')}><GoogleIcon /></button>
               <button type="button" onClick={() => handleOAuth('github')}><Github size={20} /></button>
             </div>
-            <span>Ou use seu email para registrar</span>
+            <span className="divider-text">Ou use seu email para registrar</span>
             <input type="text" placeholder="Nome" required value={username} onChange={e => setUsername(e.target.value)} />
             <input type="email" placeholder="Email" required value={email} onChange={e => setEmail(e.target.value)} />
             <input type="password" placeholder="Senha" required value={password} onChange={e => setPassword(e.target.value)} />
-            <button type="submit" disabled={loading}>{loading ? 'Aguarde...' : 'Inscreva-se'}</button>
-            <p className="mobile-only-toggle" onClick={() => setIsSignUp(false)}>Já tem conta? Entrar</p>
+            <button type="submit" className="main-btn" disabled={loading}>{loading ? 'Aguarde...' : 'Inscreva-se'}</button>
+            
+            {/* NOVO ESTILO DE BOTÃO MOBILE */}
+            <div className="mobile-only-toggle" onClick={() => setIsSignUp(false)}>
+              Já tem conta? <span>Entrar</span>
+            </div>
           </form>
         </div>
 
@@ -165,12 +181,16 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
               <button type="button" onClick={() => handleOAuth('google')}><GoogleIcon /></button>
               <button type="button" onClick={() => handleOAuth('github')}><Github size={20} /></button>
             </div>
-            <span>Ou use sua senha de e-mail</span>
+            <span className="divider-text">Ou use sua senha de e-mail</span>
             <input type="email" placeholder="Email" required value={email} onChange={e => setEmail(e.target.value)} />
             <input type="password" placeholder="Senha" required value={password} onChange={e => setPassword(e.target.value)} />
-            <a href="#" onClick={(e) => { e.preventDefault(); handleResetPassword(); }}>Esqueceu a senha?</a>
-            <button type="submit" disabled={loading}>{loading ? 'Aguarde...' : 'Entrar'}</button>
-            <p className="mobile-only-toggle" onClick={() => setIsSignUp(true)}>Criar nova conta</p>
+            <a href="#" className="forgot-pass" onClick={(e) => { e.preventDefault(); handleResetPassword(); }}>Esqueceu a senha?</a>
+            <button type="submit" className="main-btn" disabled={loading}>{loading ? 'Aguarde...' : 'Entrar'}</button>
+            
+            {/* NOVO ESTILO DE BOTÃO MOBILE */}
+            <div className="mobile-only-toggle" onClick={() => setIsSignUp(true)}>
+              Novo por aqui? <span>Criar conta</span>
+            </div>
           </form>
         </div>
 

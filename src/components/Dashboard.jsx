@@ -4,7 +4,7 @@ import {
   LayoutDashboard, BarChart3, Sun, Moon, Plus, Wallet, 
   Trash2, LogOut, Menu, X, TrendingUp, ChevronDown, Calendar, 
   PieChart as PieChartIcon, Settings, User, Save, List, Search,
-  Power, Edit2, CreditCard, CheckCircle2, Banknote
+  Power, Edit2, CreditCard, CheckCircle2, Banknote, AlertCircle
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { supabase } from '../lib/supabase';
@@ -68,6 +68,16 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [isUpdating, setIsUpdating] = useState(false);
   const [newUserName, setNewUserName] = useState(userName);
 
+  // --- SISTEMA DE NOTIFICAÇÕES (TOAST) ---
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, visible: false }));
+    }, 4000); 
+  };
+
   const fetchDados = async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
@@ -82,7 +92,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
 
   const saudacao = useMemo(() => { const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }, []);
 
-  // --- LÓGICA DE CÁLCULO ---
   const incomeTotal = useMemo(() => data.receitas.filter(r => r.mes === selectedMonth && Number(r.ano) === Number(selectedYear)).reduce((a, b) => a + b.valor, 0), [data, selectedMonth, selectedYear]);
   
   const despesasDinheiro = useMemo(() => {
@@ -105,24 +114,26 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     return Object.keys(map).map(c => ({ name: c, value: map[c], percString: totalExpenses > 0 ? ((map[c]/totalExpenses)*100).toFixed(0) + '%' : '0%' })).sort((a, b) => b.value - a.value);
   }, [data, totalExpenses, selectedMonth, selectedYear]);
 
-  // --- AÇÕES ---
+  // --- AÇÕES ATUALIZADAS COM TOAST ---
   const pagarFatura = async (cartaoId) => {
     await supabase.from('gastos').update({ fatura_paga: true }).eq('cartao_id', cartaoId).eq('mes', selectedMonth).eq('ano', Number(selectedYear));
+    showToast("Fatura paga com sucesso!", "success");
     fetchDados();
   };
 
   const addReceita = async () => {
     const v = parseFloat(rValor.replace(/\./g, '').replace(',', '.'));
-    if (!v || !rFonte) return;
+    if (!v || !rFonte) return showToast("Preencha a fonte e o valor da renda!", "error");
     const { data: { user } } = await supabase.auth.getUser();
     const agora = new Date();
     await supabase.from('receitas').insert([{ user_id: user.id, fonte: rFonte, valor: v, data: agora.toLocaleDateString('pt-BR'), hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), mes: selectedMonth, ano: Number(selectedYear) }]);
+    showToast("Renda adicionada!", "success");
     setRFonte(''); setRValor(''); fetchDados();
   };
 
   const addGasto = async () => {
     const v = parseFloat(gValor.replace(/\./g, '').replace(',', '.'));
-    if (!v || !gCat) return;
+    if (!v || !gCat) return showToast("Selecione uma categoria e preencha o valor do gasto!", "error");
     const { data: { user: authUser } } = await supabase.auth.getUser();
     const agora = new Date();
     const diaHoje = agora.getDate();
@@ -146,37 +157,70 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
       hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), 
       mes: targetMonth, ano: targetYear, fatura_paga: false 
     }]);
+    showToast("Gasto registrado!", "success");
     setGValor(''); fetchDados();
   };
 
   const addOrUpdateMensalidade = async () => {
     const v = parseFloat(mValor.replace(/\./g, '').replace(',', '.'));
-    if (!v || !mNome) return;
+    if (!v || !mNome) return showToast("Preencha o nome e o valor da mensalidade!", "error");
     const { data: { user } } = await supabase.auth.getUser();
-    if (editingMensId) await supabase.from('mensalidades').update({ nome: mNome, valor: v }).eq('id', editingMensId);
-    else await supabase.from('mensalidades').insert([{ user_id: user.id, nome: mNome, valor: v, ativa: true }]);
+    if (editingMensId) {
+      await supabase.from('mensalidades').update({ nome: mNome, valor: v }).eq('id', editingMensId);
+      showToast("Mensalidade atualizada!", "success");
+    } else {
+      await supabase.from('mensalidades').insert([{ user_id: user.id, nome: mNome, valor: v, ativa: true }]);
+      showToast("Nova mensalidade criada!", "success");
+    }
     setMNome(''); setMValor(''); setEditingMensId(null); fetchDados();
   };
 
   const deleteCartao = async (id) => { 
+    if (!window.confirm("Isso apagará o cartão e TODOS os gastos vinculados a ele. Continuar?")) return;
     await supabase.from('gastos').delete().eq('cartao_id', id);
     await supabase.from('cartoes').delete().eq('id', id); 
+    showToast("Cartão e histórico apagados.", "success");
     fetchDados(); 
   };
 
   const addCartao = async () => {
-    if (!cNome || !cFechamento) return;
+    if (!cNome || !cFechamento) return showToast("Preencha o nome e o dia de fechamento!", "error");
     const { data: { user } } = await supabase.auth.getUser();
     await supabase.from('cartoes').insert([{ user_id: user.id, nome: cNome, dia_fechamento: parseInt(cFechamento) }]);
+    showToast("Cartão adicionado!", "success");
     setCNome(''); setCFechamento(''); fetchDados();
   };
 
-  const addCategoria = async () => { if (!novaCatInput) return; const { data: { user } } = await supabase.auth.getUser(); await supabase.from('categorias').insert([{ user_id: user.id, nome: novaCatInput }]); setNovaCatInput(''); fetchDados(); };
-  const removeCategoria = async (n) => { const { data: { user: authUser } } = await supabase.auth.getUser(); await supabase.from('categorias').delete().eq('user_id', authUser.id).eq('nome', n); fetchDados(); };
-  const deleteItem = async (t, id) => { await supabase.from(t).delete().eq('id', id); fetchDados(); };
+  const addCategoria = async () => { 
+    if (!novaCatInput) return showToast("Digite um nome para a categoria!", "error"); 
+    const { data: { user } } = await supabase.auth.getUser(); 
+    await supabase.from('categorias').insert([{ user_id: user.id, nome: novaCatInput }]); 
+    showToast("Categoria adicionada!", "success");
+    setNovaCatInput(''); fetchDados(); 
+  };
 
-  const toggleMensalidade = async (id, status) => { await supabase.from('mensalidades').update({ ativa: !status }).eq('id', id); fetchDados(); };
-  const deleteMensalidade = async (id) => { await supabase.from('mensalidades').delete().eq('id', id); fetchDados(); };
+  const removeCategoria = async (n) => { 
+    const { data: { user: authUser } } = await supabase.auth.getUser(); 
+    await supabase.from('categorias').delete().eq('user_id', authUser.id).eq('nome', n); 
+    fetchDados(); 
+  };
+  
+  const deleteItem = async (t, id) => { 
+    await supabase.from(t).delete().eq('id', id); 
+    showToast("Registro excluído.", "success");
+    fetchDados(); 
+  };
+
+  const toggleMensalidade = async (id, status) => { 
+    await supabase.from('mensalidades').update({ ativa: !status }).eq('id', id); 
+    fetchDados(); 
+  };
+  
+  const deleteMensalidade = async (id) => { 
+    await supabase.from('mensalidades').delete().eq('id', id); 
+    showToast("Mensalidade excluída.", "success");
+    fetchDados(); 
+  };
 
   const formatar = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
   const sortRecent = (list) => list.sort((a, b) => {
@@ -196,13 +240,51 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     return grupos;
   }, [data, selectedMonth, selectedYear, searchTermCredito]);
 
-  const handleUpdateName = async () => { await supabase.auth.updateUser({ data: { display_name: newUserName } }); alert("Sucesso!"); window.location.reload(); };
-  const handleDeleteAccount = async () => { if (!window.confirm("CONFIRMA?")) return; const { data: { user } } = await supabase.auth.getUser(); await supabase.from('receitas').delete().eq('user_id', user.id); await supabase.from('gastos').delete().eq('user_id', user.id); await supabase.from('categorias').delete().eq('user_id', user.id); await supabase.from('mensalidades').delete().eq('user_id', user.id); await supabase.from('cartoes').delete().eq('user_id', user.id); await onLogout(); };
+  const handleUpdateName = async () => { 
+    if(!newUserName) return showToast("O nome não pode ser vazio!", "error");
+    setIsUpdating(true);
+    try {
+      await supabase.auth.updateUser({ data: { display_name: newUserName } }); 
+      showToast("Perfil salvo! Recarregando...", "success");
+      setTimeout(() => window.location.reload(), 1500); 
+    } catch (err) {
+      showToast("Erro ao salvar: " + err.message, "error");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => { 
+    if (!window.confirm("TEM CERTEZA? Essa ação vai deletar sua conta e TODOS os seus dados permanentemente.")) return; 
+    try {
+      const { data: { user } } = await supabase.auth.getUser(); 
+      await supabase.from('receitas').delete().eq('user_id', user.id); 
+      await supabase.from('gastos').delete().eq('user_id', user.id); 
+      await supabase.from('categorias').delete().eq('user_id', user.id); 
+      await supabase.from('mensalidades').delete().eq('user_id', user.id); 
+      await supabase.from('cartoes').delete().eq('user_id', user.id); 
+      showToast("Conta excluída. Redirecionando...", "success");
+      setTimeout(() => onLogout(), 1500);
+    } catch (err) {
+      showToast("Erro ao excluir a conta.", "error");
+    }
+  };
 
   const isMobile = window.innerWidth < 768;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--color-bg-page)] transition-all">
+    <div className="flex h-screen overflow-hidden bg-[var(--color-bg-page)] transition-all relative">
+      
+      {/* Container de Notificação (Toast) */}
+      <AnimatePresence>
+        {toast.visible && (
+          <motion.div initial={{ opacity: 0, y: -50, scale: 0.9 }} animate={{ opacity: 1, y: 20, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-sm text-white ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}>
+            {toast.type === 'error' ? <AlertCircle size={20} className="text-red-500" /> : <CheckCircle2 size={20} className="text-emerald-500" />}
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="fixed top-4 left-4 z-[110] p-3 bg-primary-600 text-white rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all"> {isMenuOpen ? <X size={20}/> : <Menu size={20}/>} </button>
       <AnimatePresence> {isMenuOpen && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMenuOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[85] lg:hidden" />} </AnimatePresence>
       
