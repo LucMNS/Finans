@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // Import fixado aqui
+import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import { supabase } from './lib/supabase';
@@ -10,16 +10,13 @@ export default function App() {
 
   
   useEffect(() => {
-    // Aplica o tema
     if (isDarkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
 
-    // Checa sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
 
-    // Escuta mudanças (Login, Logout, Recuperação de Senha)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       if (event === 'PASSWORD_RECOVERY') setIsRecovering(true);
