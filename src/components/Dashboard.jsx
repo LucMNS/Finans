@@ -7,7 +7,6 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { supabase } from '../lib/supabase';
 
-// --- COMPONENTE DE ABA ANIMADA ---
 function SeletorAnimado({ value, options, onChange, icon: Icon, className = "" }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -208,7 +207,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                 </CardInput>
               </div>
 
-              {/* GRID DE RESUMO COM ANIMAÇÃO SNAPPY E BORDA VISÍVEL */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8">
                 <ResumoItem label="Saldo Disponível" value={formatar(totalR - totalG)} color="text-emerald-500" icon={<Wallet size={20}/>}/>
                 <ResumoItem label="Despesas" value={formatar(totalG)} color="text-red-500" icon={<Trash2 size={20}/>}/>
@@ -285,7 +283,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   );
 }
 
-// COMPONENTE DE RESUMO COM EFEITO RÁPIDO E BORDA VERDE NÍTIDA
 function ResumoItem({ label, value, color, icon }) {
   return (
     <motion.div 
