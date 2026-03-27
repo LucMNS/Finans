@@ -23,7 +23,7 @@ function SeletorAnimado({ value, options, onChange, icon: Icon, className = "" }
   }, []);
   return (
     <div className={`relative ${className}`} ref={containerRef} style={{ zIndex: isOpen ? 100 : 1 }}>
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 bg-[var(--color-bg-page)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl shadow-sm hover:border-primary-500 transition-all font-black text-xs uppercase">
+      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4 bg-[var(--color-bg-page)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl sm:rounded-2xl shadow-sm hover:border-primary-500 transition-all font-black text-[10px] sm:text-xs uppercase">
         <div className="flex items-center gap-2 truncate">
           {Icon && <Icon size={16} className="text-primary-500 shrink-0" />}
           <span className="truncate">{value || "Selecione..."}</span>
@@ -32,11 +32,11 @@ function SeletorAnimado({ value, options, onChange, icon: Icon, className = "" }
       </button>
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} className="absolute left-0 right-0 mt-2 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl shadow-2xl z-[150] overflow-hidden">
-            <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
+          <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} className="absolute left-0 right-0 mt-2 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl sm:rounded-2xl shadow-2xl z-[150] overflow-hidden">
+            <div className="max-h-60 overflow-y-auto p-1 sm:p-2 custom-scrollbar">
               {options.length === 0 ? <p className="text-[10px] font-black uppercase p-4 opacity-40 text-center">Vazio</p> : 
                 options.map((opt) => (
-                  <button key={opt} onClick={() => { onChange(opt); setIsOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase ${String(value) === String(opt) ? 'bg-primary-600 text-white' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>{opt}</button>
+                  <button key={opt} onClick={() => { onChange(opt); setIsOpen(false); }} className={`w-full text-left px-3 py-3 sm:px-4 rounded-lg sm:rounded-xl transition-all font-bold text-[10px] sm:text-xs uppercase ${String(value) === String(opt) ? 'bg-primary-600 text-white' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>{opt}</button>
                 ))
               }
             </div>
@@ -68,7 +68,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [isUpdating, setIsUpdating] = useState(false);
   const [newUserName, setNewUserName] = useState(userName);
 
-  // --- SISTEMA DE NOTIFICAÇÕES (TOAST) ---
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
@@ -114,7 +113,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     return Object.keys(map).map(c => ({ name: c, value: map[c], percString: totalExpenses > 0 ? ((map[c]/totalExpenses)*100).toFixed(0) + '%' : '0%' })).sort((a, b) => b.value - a.value);
   }, [data, totalExpenses, selectedMonth, selectedYear]);
 
-  // --- AÇÕES ATUALIZADAS COM TOAST ---
   const pagarFatura = async (cartaoId) => {
     await supabase.from('gastos').update({ fatura_paga: true }).eq('cartao_id', cartaoId).eq('mes', selectedMonth).eq('ano', Number(selectedYear));
     showToast("Fatura paga com sucesso!", "success");
@@ -275,88 +273,98 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-bg-page)] transition-all relative">
       
-      {/* Container de Notificação (Toast) */}
       <AnimatePresence>
         {toast.visible && (
-          <motion.div initial={{ opacity: 0, y: -50, scale: 0.9 }} animate={{ opacity: 1, y: 20, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-sm text-white ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}>
-            {toast.type === 'error' ? <AlertCircle size={20} className="text-red-500" /> : <CheckCircle2 size={20} className="text-emerald-500" />}
+          <motion.div initial={{ opacity: 0, y: -50, scale: 0.9 }} animate={{ opacity: 1, y: 20, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-[10px] sm:text-sm text-white w-[90%] sm:w-auto text-center justify-center ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}>
+            {toast.type === 'error' ? <AlertCircle size={18} className="text-red-500 shrink-0" /> : <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />}
             {toast.message}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="fixed top-4 left-4 z-[110] p-3 bg-primary-600 text-white rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all"> {isMenuOpen ? <X size={20}/> : <Menu size={20}/>} </button>
+      <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="fixed top-4 left-4 z-[110] p-3 bg-primary-600 text-white rounded-xl sm:rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all"> {isMenuOpen ? <X size={20}/> : <Menu size={20}/>} </button>
       <AnimatePresence> {isMenuOpen && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMenuOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[85] lg:hidden" />} </AnimatePresence>
       
       {isMenuOpen && (
-        <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} className="fixed inset-y-0 left-0 w-72 bg-[var(--color-bg-card)] border-r border-[var(--color-border)] p-6 pt-20 z-[90] flex flex-col shadow-2xl">
+        <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} className="fixed inset-y-0 left-0 w-64 sm:w-72 bg-[var(--color-bg-card)] border-r border-[var(--color-border)] p-4 sm:p-6 pt-20 z-[90] flex flex-col shadow-2xl">
           <nav className="flex-1 space-y-2">
-            <SidebarItem icon={<LayoutDashboard size={20}/>} label="Painel" active={activeTab === 'painel'} onClick={() => {setActiveTab('painel'); setIsMenuOpen(false);}} />
-            <SidebarItem icon={<BarChart3 size={20}/>} label="Análises" active={activeTab === 'analises'} onClick={() => {setActiveTab('analises'); setIsMenuOpen(false);}} />
-            <SidebarItem icon={<Settings size={20}/>} label="Configurações" active={activeTab === 'configuracoes'} onClick={() => {setActiveTab('configuracoes'); setIsMenuOpen(false);}} />
+            <SidebarItem icon={<LayoutDashboard size={18}/>} label="Painel" active={activeTab === 'painel'} onClick={() => {setActiveTab('painel'); setIsMenuOpen(false);}} />
+            <SidebarItem icon={<BarChart3 size={18}/>} label="Análises" active={activeTab === 'analises'} onClick={() => {setActiveTab('analises'); setIsMenuOpen(false);}} />
+            <SidebarItem icon={<Settings size={18}/>} label="Configurações" active={activeTab === 'configuracoes'} onClick={() => {setActiveTab('configuracoes'); setIsMenuOpen(false);}} />
           </nav>
           <div className="pt-6 border-t border-[var(--color-border)] space-y-2">
-            <button onClick={toggleDarkMode} className="flex items-center gap-3 w-full p-4 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all font-bold text-sm">{isDarkMode ? <Sun size={18}/> : <Moon size={18}/>} Modo {isDarkMode ? 'Luz' : 'Trevas'}</button>
-            <button onClick={onLogout} className="flex items-center gap-3 w-full p-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold text-sm transition-all"><LogOut size={18}/> Sair</button>
+            <button onClick={toggleDarkMode} className="flex items-center gap-3 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all font-bold text-xs sm:text-sm">{isDarkMode ? <Sun size={16}/> : <Moon size={16}/>} Modo {isDarkMode ? 'Luz' : 'Trevas'}</button>
+            <button onClick={onLogout} className="flex items-center gap-3 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold text-xs sm:text-sm transition-all"><LogOut size={16}/> Sair</button>
           </div>
         </motion.aside>
       )}
 
-      <main className={`flex-1 overflow-y-auto p-4 sm:p-10 lg:p-16 transition-all duration-300 ${isMenuOpen ? 'lg:pl-80' : 'pl-4 sm:pl-10 lg:pl-16'}`}>
-        <header className="mb-8 mt-14 lg:mt-0 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div> <h1 className="text-2xl sm:text-4xl font-black tracking-tight">{saudacao}, {userName}!</h1> </div>
-          <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-            <SeletorAnimado value={meses[selectedMonth]} options={meses} onChange={(val) => setSelectedMonth(meses.indexOf(val))} icon={Calendar} className="flex-1 lg:w-40" />
-            <SeletorAnimado value={selectedYear} options={anos} onChange={(val) => setSelectedYear(Number(val))} className="w-24 sm:w-32" />
+      {/* Correção 1: Margem esquerda estendida no Desktop (lg:pl-28) para não colidir com o botão de Menu */}
+      <main className={`flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12 transition-all duration-300 ${isMenuOpen ? 'lg:pl-80' : 'pl-4 sm:pl-8 lg:pl-28'}`}>
+        
+        <header className="mb-6 sm:mb-8 mt-16 lg:mt-0 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
+          <div> 
+            <h1 className="text-xl sm:text-3xl lg:text-4xl font-black tracking-tight">
+              {activeTab === 'configuracoes' ? 'Configurações de Conta' : `${saudacao}, ${userName}!`}
+            </h1> 
           </div>
+          
+          {activeTab !== 'configuracoes' && (
+            <div className="flex flex-row flex-wrap gap-2 w-full lg:w-auto">
+              {activeTab === 'painel' && (
+                <SeletorAnimado value={meses[selectedMonth]} options={meses} onChange={(val) => setSelectedMonth(meses.indexOf(val))} icon={Calendar} className="flex-1 sm:flex-none lg:w-40 min-w-[120px]" />
+              )}
+              <SeletorAnimado value={selectedYear} options={anos} onChange={(val) => setSelectedYear(Number(val))} className="w-20 sm:w-28 lg:w-32" />
+            </div>
+          )}
         </header>
 
         <AnimatePresence mode="wait">
           {activeTab === 'painel' ? (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-10">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 overflow-visible">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-8 lg:space-y-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 overflow-visible">
                 <CardInput title="Adicionar Renda" color="text-emerald-500">
-                  <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <input value={rFonte} onChange={e=>setRFonte(e.target.value)} placeholder="Fonte" className="flex-1 p-4 bg-[var(--color-bg-page)] rounded-2xl outline-none font-bold text-sm min-w-0" />
-                    <input value={rValor} onChange={e=>setRValor(e.target.value)} placeholder="R$ 0" className="sm:w-32 p-4 bg-[var(--color-bg-page)] rounded-2xl outline-none font-black text-sm min-w-0" />
-                    <button onClick={addReceita} className="p-4 bg-emerald-500 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus/></button>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
+                    <input value={rFonte} onChange={e=>setRFonte(e.target.value)} placeholder="Fonte" className="flex-1 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-bold text-xs sm:text-sm min-w-0" />
+                    <input value={rValor} onChange={e=>setRValor(e.target.value)} placeholder="R$ 0" className="w-full sm:w-32 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-black text-xs sm:text-sm min-w-0" />
+                    <button onClick={addReceita} className="p-3 sm:p-4 w-full sm:w-auto bg-emerald-500 text-white rounded-xl sm:rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus size={18}/></button>
                   </div>
                 </CardInput>
                 <CardInput title="Novo Gasto" color="text-primary-500">
-                  <div className="flex flex-col w-full gap-4">
-                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                  <div className="flex flex-col w-full gap-3 sm:gap-4">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
                       <SeletorAnimado value={gCat} options={data.cats} onChange={setGCat} className="flex-1 sm:w-40 min-w-0" />
-                      <input value={gValor} onChange={e=>setGValor(e.target.value)} placeholder="Valor" className="flex-1 p-4 bg-[var(--color-bg-page)] rounded-2xl outline-none font-bold text-sm min-w-0" />
+                      <input value={gValor} onChange={e=>setGValor(e.target.value)} placeholder="Valor" className="flex-1 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-bold text-xs sm:text-sm min-w-0" />
                       <SeletorAnimado value={selectedCardId === 'dinheiro' ? "Dinheiro" : data.cartoes.find(c => c.id === selectedCardId)?.nome} options={["Dinheiro", ...data.cartoes.map(c => c.nome)]} onChange={(v) => setSelectedCardId(v === "Dinheiro" ? "dinheiro" : data.cartoes.find(c => c.nome === v).id)} icon={CreditCard} className="flex-1 sm:w-40 min-w-0" />
-                      <button onClick={addGasto} className="p-4 bg-primary-600 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus/></button>
+                      <button onClick={addGasto} className="p-3 sm:p-4 w-full sm:w-auto bg-primary-600 text-white rounded-xl sm:rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus size={18}/></button>
                     </div>
-                    <div className="flex items-center gap-3 border-t border-[var(--color-border)] pt-4 flex-wrap">
-                      <input value={novaCatInput} onChange={e=>setNovaCatInput(e.target.value)} placeholder="Nova categoria..." className="flex-1 text-xs bg-transparent border-b border-[var(--color-border)] outline-none min-w-[150px]" />
-                      <button onClick={addCategoria} className="text-[10px] font-black text-primary-500 uppercase shrink-0">+ Adicionar</button>
-                      <div className="flex flex-wrap gap-2 w-full mt-2"> {data.cats.map(c => ( <span key={c} className="px-3 py-1 bg-[var(--color-bg-icon)] text-[9px] font-black rounded-full flex items-center gap-2"> {c} <button onClick={() => removeCategoria(c)}><X size={10}/></button> </span> ))} </div>
+                    <div className="flex items-center gap-2 sm:gap-3 border-t border-[var(--color-border)] pt-3 sm:pt-4 flex-wrap">
+                      <input value={novaCatInput} onChange={e=>setNovaCatInput(e.target.value)} placeholder="Nova categoria..." className="flex-1 text-[10px] sm:text-xs bg-transparent border-b border-[var(--color-border)] outline-none min-w-[120px]" />
+                      <button onClick={addCategoria} className="text-[9px] sm:text-[10px] font-black text-primary-500 uppercase shrink-0">+ Add</button>
+                      <div className="flex flex-wrap gap-2 w-full mt-2"> {data.cats.map(c => ( <span key={c} className="px-2 py-1 sm:px-3 sm:py-1 bg-[var(--color-bg-icon)] text-[8px] sm:text-[9px] font-black rounded-full flex items-center gap-1 sm:gap-2"> {c} <button onClick={() => removeCategoria(c)}><X size={10}/></button> </span> ))} </div>
                     </div>
                   </div>
                 </CardInput>
               </div>
 
-              <div className="bg-[var(--color-bg-card)] p-6 sm:p-10 rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
-                <h3 className="text-xs font-black uppercase tracking-widest opacity-60 mb-8 flex items-center gap-2"><CreditCard size={14} className="text-primary-500" /> Mensalidades</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
+                <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60 mb-6 flex items-center gap-2"><CreditCard size={14} className="text-primary-500" /> Mensalidades</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
                   <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <input value={mNome} onChange={e=>setMNome(e.target.value)} placeholder="Ex: Netflix, Aluguel..." className="flex-1 p-4 bg-[var(--color-bg-page)] rounded-2xl outline-none font-bold text-sm" />
-                      <input value={mValor} onChange={e=>setMValor(e.target.value)} placeholder="R$ 0" className="sm:w-32 p-4 bg-[var(--color-bg-page)] rounded-2xl outline-none font-black text-sm" />
-                      <button onClick={addOrUpdateMensalidade} className="p-4 bg-primary-600 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"> {editingMensId ? <Save size={18}/> : <Plus size={18}/>} </button>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                      <input value={mNome} onChange={e=>setMNome(e.target.value)} placeholder="Ex: Netflix, Aluguel..." className="flex-1 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-bold text-xs sm:text-sm" />
+                      <input value={mValor} onChange={e=>setMValor(e.target.value)} placeholder="R$ 0" className="w-full sm:w-32 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-black text-xs sm:text-sm" />
+                      <button onClick={addOrUpdateMensalidade} className="p-3 sm:p-4 w-full sm:w-auto bg-primary-600 text-white rounded-xl sm:rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"> {editingMensId ? <Save size={16}/> : <Plus size={16}/>} </button>
                     </div>
                   </div>
-                  <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                  <div className="space-y-2 sm:space-y-3 max-h-40 sm:max-h-48 overflow-y-auto custom-scrollbar pr-1 sm:pr-2">
                     {data.mensalidades.map(m => (
-                      <div key={m.id} className={`flex justify-between items-center p-4 bg-[var(--color-bg-page)] rounded-2xl border transition-all ${m.ativa ? 'border-primary-500/20' : 'opacity-40 grayscale'}`}>
-                        <div className="truncate"> <p className="font-black text-xs truncate uppercase">{m.nome}</p> <p className="text-[10px] font-black text-primary-500">{formatar(m.valor)}/mês</p> </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => toggleMensalidade(m.id, m.ativa)} className={`p-2 rounded-xl transition-all ${m.ativa ? 'bg-primary-600 text-white' : 'bg-zinc-200'}`}><Power size={14}/></button>
-                          <button onClick={() => {setEditingMensId(m.id); setMNome(m.nome); setMValor(m.valor.toString());}} className="p-2 text-zinc-400 hover:text-primary-500"><Edit2 size={14}/></button>
-                          <button onClick={() => deleteMensalidade(m.id)} className="p-2 text-zinc-400 hover:text-red-500"><Trash2 size={14}/></button>
+                      <div key={m.id} className={`flex justify-between items-center p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl border transition-all ${m.ativa ? 'border-primary-500/20' : 'opacity-40 grayscale'}`}>
+                        <div className="truncate"> <p className="font-black text-[10px] sm:text-xs truncate uppercase">{m.nome}</p> <p className="text-[9px] sm:text-[10px] font-black text-primary-500">{formatar(m.valor)}/mês</p> </div>
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <button onClick={() => toggleMensalidade(m.id, m.ativa)} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${m.ativa ? 'bg-primary-600 text-white' : 'bg-zinc-200'}`}><Power size={12}/></button>
+                          <button onClick={() => {setEditingMensId(m.id); setMNome(m.nome); setMValor(m.valor.toString());}} className="p-1.5 sm:p-2 text-zinc-400 hover:text-primary-500"><Edit2 size={12}/></button>
+                          <button onClick={() => deleteMensalidade(m.id)} className="p-1.5 sm:p-2 text-zinc-400 hover:text-red-500"><Trash2 size={12}/></button>
                         </div>
                       </div>
                     ))}
@@ -364,36 +372,37 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                 </div>
               </div>
 
-              <div className="bg-[var(--color-bg-card)] p-6 sm:p-10 rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
-                <h3 className="text-xs font-black uppercase tracking-widest opacity-60 mb-8 flex items-center gap-2"><CreditCard size={14} className="text-primary-500" /> Cartão de Crédito</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="flex flex-col sm:flex-row gap-3 h-fit">
-                    <input value={cNome} onChange={e=>setCNome(e.target.value)} placeholder="Nome do Cartão" className="flex-1 p-4 bg-[var(--color-bg-page)] rounded-2xl outline-none font-bold text-sm min-w-0" />
-                    <input value={cFechamento} onChange={e=>setCFechamento(e.target.value)} placeholder="Dia Fech." className="sm:w-32 p-4 bg-[var(--color-bg-page)] rounded-2xl outline-none font-black text-sm min-w-0" />
-                    <button onClick={addCartao} className="p-4 bg-primary-600 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus size={18}/></button>
+              <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
+                <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60 mb-6 flex items-center gap-2"><CreditCard size={14} className="text-primary-500" /> Cartão de Crédito</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 h-fit">
+                    <input value={cNome} onChange={e=>setCNome(e.target.value)} placeholder="Nome do Cartão" className="flex-1 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-bold text-xs sm:text-sm min-w-0" />
+                    <input value={cFechamento} onChange={e=>setCFechamento(e.target.value)} placeholder="Dia Fech." className="w-full sm:w-32 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-black text-xs sm:text-sm min-w-0" />
+                    <button onClick={addCartao} className="p-3 sm:p-4 w-full sm:w-auto bg-primary-600 text-white rounded-xl sm:rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus size={16}/></button>
                   </div>
-                  <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                  <div className="space-y-2 sm:space-y-3 max-h-40 sm:max-h-48 overflow-y-auto custom-scrollbar pr-1 sm:pr-2">
                     {data.cartoes.map(c => {
                       const gastosMes = data.gastos.filter(g => g.cartao_id === c.id && Number(g.mes) === selectedMonth && Number(g.ano) === Number(selectedYear));
                       const totalC = gastosMes.reduce((acc, curr) => acc + curr.valor, 0);
                       const totalPendente = gastosMes.filter(g => !g.fatura_paga).reduce((acc, curr) => acc + curr.valor, 0);
                       const isPago = totalC > 0 && totalPendente === 0;
-
                       const agora = new Date();
                       const isMesAtual = selectedMonth === agora.getMonth() && Number(selectedYear) === agora.getFullYear();
                       const isMesPassado = (Number(selectedYear) < agora.getFullYear()) || (Number(selectedYear) === agora.getFullYear() && selectedMonth < agora.getMonth());
                       const isVencido = (isMesAtual && agora.getDate() > c.dia_fechamento && !isPago && totalC > 0) || (isMesPassado && !isPago && totalC > 0);
 
                       return (
-                        <div key={c.id} className={`flex justify-between items-center p-4 rounded-2xl border transition-all ${isPago ? 'bg-emerald-500/10 border-emerald-500/50' : isVencido ? 'bg-red-500/10 border-red-500/50 animate-pulse-subtle' : 'bg-[var(--color-bg-page)] border-primary-500/10'}`}>
-                          <div className="flex-1"> 
-                            <p className={`font-black text-[10px] uppercase ${isPago ? 'text-emerald-500' : isVencido ? 'text-red-500' : ''}`}>{c.nome} {isPago ? '(PAGO)' : isVencido ? '(FECHADO)' : ''}</p> 
-                            <p className="text-[12px] font-black">{formatar(totalC)}</p> 
-                            <p className="text-[8px] opacity-40 font-bold uppercase">Fecha dia {c.dia_fechamento}</p>
+                        <div key={c.id} className={`flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all ${isPago ? 'bg-emerald-500/10 border-emerald-500/50' : isVencido ? 'bg-red-500/10 border-red-500/50 animate-pulse-subtle' : 'bg-[var(--color-bg-page)] border-primary-500/10'}`}>
+                          <div className="flex-1 w-full sm:w-auto flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start"> 
+                            <div>
+                              <p className={`font-black text-[9px] sm:text-[10px] uppercase ${isPago ? 'text-emerald-500' : isVencido ? 'text-red-500' : ''}`}>{c.nome} {isPago ? '(PAGO)' : isVencido ? '(FECHADO)' : ''}</p> 
+                              <p className="text-[11px] sm:text-[12px] font-black">{formatar(totalC)}</p> 
+                            </div>
+                            <p className="text-[8px] opacity-40 font-bold uppercase mt-0 sm:mt-1">Fecha dia {c.dia_fechamento}</p>
                           </div>
-                          <div className="flex gap-2"> 
-                            {!isPago && totalC > 0 && ( <button onClick={() => pagarFatura(c.id)} className={`px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:scale-105 transition-all ${isVencido ? 'bg-red-500' : 'bg-emerald-500'}`}> <CheckCircle2 size={14}/> Pagar Fatura </button> )}
-                            <button onClick={() => deleteCartao(c.id)} className="p-2 text-zinc-400 hover:text-red-500"><Trash2 size={16}/></button> 
+                          <div className="flex gap-2 w-full sm:w-auto justify-end mt-1 sm:mt-0"> 
+                            {!isPago && totalC > 0 && ( <button onClick={() => pagarFatura(c.id)} className={`px-3 py-1.5 sm:px-4 sm:py-2 text-white rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase flex items-center gap-1 sm:gap-2 shadow-lg hover:scale-105 transition-all ${isVencido ? 'bg-red-500' : 'bg-emerald-500'}`}> <CheckCircle2 size={12}/> Pagar </button> )}
+                            <button onClick={() => deleteCartao(c.id)} className="p-1.5 sm:p-2 text-zinc-400 hover:text-red-500"><Trash2 size={14}/></button> 
                           </div>
                         </div>
                       );
@@ -402,45 +411,46 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <ResumoItem label="Saldo Disponível" value={formatar(incomeTotal - totalExpenses)} color="text-emerald-500" icon={<Wallet size={20}/>}/>
-                <ResumoItem label="Dinheiro / Pix" value={formatar(despesasDinheiro)} color="text-purple-500" icon={<Banknote size={20}/>}/>
-                <ResumoItem label="Fatura Cartão" value={formatar(despesasCredito)} color="text-purple-500" icon={<CreditCard size={20}/>}/>
-                <ResumoItem label="Despesas Totais" value={formatar(totalExpenses)} color="text-red-500" icon={<TrendingUp size={20}/>}/>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+                <ResumoItem label="Saldo Livre" value={formatar(incomeTotal - totalExpenses)} color="text-emerald-500" icon={<Wallet size={18}/>}/>
+                <ResumoItem label="Dinheiro/Pix" value={formatar(despesasDinheiro)} color="text-purple-500" icon={<Banknote size={18}/>}/>
+                <ResumoItem label="Cartão" value={formatar(despesasCredito)} color="text-purple-500" icon={<CreditCard size={18}/>}/>
+                <ResumoItem label="Despesas" value={formatar(totalExpenses)} color="text-red-500" icon={<TrendingUp size={18}/>}/>
               </div>
 
-              <div className="bg-[var(--color-bg-card)] p-6 sm:p-10 rounded-[2.5rem] border border-[var(--color-border)] shadow-sm relative overflow-visible lg:col-span-1">
-                 <div className="flex justify-between items-center mb-8 pr-2"> <h3 className="text-xs font-black uppercase tracking-widest opacity-60">Gráfico</h3>
-                   <div className="flex bg-[var(--color-bg-page)] p-1 rounded-xl border border-[var(--color-border)]">
-                     <button onClick={() => setDistView('horizontal')} className={`p-2 rounded-lg transition-all ${distView === 'horizontal' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Barra Horizontal"><List size={14}/></button>
-                     <button onClick={() => setDistView('vertical')} className={`p-2 rounded-lg transition-all ${distView === 'vertical' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Barra Vertical"><BarChart3 size={14}/></button>
-                     <button onClick={() => setDistView('pie')} className={`p-2 rounded-lg transition-all ${distView === 'pie' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Rodela"><PieChartIcon size={14}/></button>
+              <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm relative overflow-visible lg:col-span-1">
+                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 pr-2"> 
+                   <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Gráfico</h3>
+                   <div className="flex bg-[var(--color-bg-page)] p-1 rounded-xl border border-[var(--color-border)] w-full sm:w-auto justify-center">
+                     <button onClick={() => setDistView('horizontal')} className={`flex-1 sm:flex-none p-2 flex justify-center rounded-lg transition-all ${distView === 'horizontal' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Barra Horizontal"><List size={14}/></button>
+                     <button onClick={() => setDistView('vertical')} className={`flex-1 sm:flex-none p-2 flex justify-center rounded-lg transition-all ${distView === 'vertical' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Barra Vertical"><BarChart3 size={14}/></button>
+                     <button onClick={() => setDistView('pie')} className={`flex-1 sm:flex-none p-2 flex justify-center rounded-lg transition-all ${distView === 'pie' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Rodela"><PieChartIcon size={14}/></button>
                    </div>
                  </div>
-                 <div className="h-64 w-full">
+                 <div className="h-56 sm:h-64 w-full">
                    <ResponsiveContainer width="100%" height="100%">
-                      {distView === 'pie' ? ( <PieChart> <Pie data={dadosPizza} innerRadius={65} outerRadius={90} dataKey="value" stroke="none" paddingAngle={5} cornerRadius={6}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} className="hover:opacity-80 transition-opacity cursor-pointer outline-none" />)} </Pie> <Tooltip contentStyle={{ borderRadius: '20px', border: 'none', fontWeight: '900', fontSize: '12px' }} /> </PieChart> ) : 
-                      distView === 'horizontal' ? ( <BarChart layout="vertical" data={dadosPizza} margin={{ left: 10, right: 30 }}> <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.05} /> <XAxis type="number" hide /> <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: '900'}} width={80} /> <Tooltip cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={20}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} />)} </Bar> </BarChart> ) : 
-                      ( <BarChart data={dadosPizza} margin={{ top: 20, bottom: 20 }}> <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} /> <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: '900'}} /> <YAxis hide /> <Tooltip cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={30}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} />)} </Bar> </BarChart> )}
+                      {distView === 'pie' ? ( <PieChart> <Pie data={dadosPizza} innerRadius={isMobile ? 50 : 65} outerRadius={isMobile ? 75 : 90} dataKey="value" stroke="none" paddingAngle={5} cornerRadius={6}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} className="hover:opacity-80 transition-opacity cursor-pointer outline-none" />)} </Pie> <Tooltip formatter={(value) => formatar(value)} contentStyle={{ borderRadius: '20px', border: 'none', fontWeight: '900', fontSize: '12px' }} /> </PieChart> ) : 
+                      distView === 'horizontal' ? ( <BarChart layout="vertical" data={dadosPizza} margin={{ left: 0, right: 10 }}> <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.05} /> <XAxis type="number" hide /> <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} width={70} /> <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={16}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} />)} </Bar> </BarChart> ) : 
+                      ( <BarChart data={dadosPizza} margin={{ top: 10, bottom: 10, left: -20 }}> <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} /> <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} /> <YAxis type="number" hide /> <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={20}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} />)} </Bar> </BarChart> )}
                    </ResponsiveContainer>
                  </div>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6"> {dadosPizza.map(d => ( <div key={d.name} className="flex justify-between text-[10px] font-black border-b border-zinc-100 dark:border-zinc-800 pb-2"> <span>{d.name}</span> <span className="text-primary-500">{d.percString}</span> </div> ))} </div>
+                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6"> {dadosPizza.map(d => ( <div key={d.name} className="flex justify-between items-center text-[9px] sm:text-[10px] font-black border-b border-zinc-100 dark:border-zinc-800 pb-2"> <span className="truncate pr-2">{d.name}</span> <span className="text-primary-500 shrink-0">{d.percString}</span> </div> ))} </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10">
-                <div className="bg-[var(--color-bg-card)] p-6 sm:p-10 rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
-                  <div className="flex justify-between items-center mb-8 gap-4 flex-wrap"> 
-                    <h3 className="text-xs font-black uppercase opacity-60">Histórico Principal</h3> 
-                    <div className="relative w-full sm:w-48 group"> <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary-500 transition-colors" /> <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar..." className="w-full pl-9 pr-4 py-2 bg-[var(--color-bg-page)] rounded-xl outline-none text-[10px] font-bold border border-transparent transition-all" /> </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-10">
+                <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3"> 
+                    <h3 className="text-[10px] sm:text-xs font-black uppercase opacity-60">Histórico Principal</h3> 
+                    <div className="relative w-full sm:w-48 group"> <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary-500 transition-colors" /> <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar..." className="w-full pl-9 pr-4 py-2 bg-[var(--color-bg-page)] rounded-xl outline-none text-[10px] sm:text-xs font-bold border border-transparent transition-all" /> </div>
                   </div>
-                  <div className="space-y-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-4 sm:space-y-6 max-h-64 sm:max-h-96 overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                     {Object.keys(historicoPrincipal).map(dataString => (
-                      <div key={dataString} className="space-y-3">
-                        <div className="sticky top-0 z-10 py-1 bg-[var(--color-bg-card)]/80 backdrop-blur-md"> <h4 className="text-[9px] font-black uppercase tracking-widest text-primary-500">{dataString === new Date().toLocaleDateString('pt-BR') ? "Hoje" : dataString}</h4> </div>
+                      <div key={dataString} className="space-y-2 sm:space-y-3">
+                        <div className="sticky top-0 z-10 py-1 bg-[var(--color-bg-card)]/80 backdrop-blur-md"> <h4 className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-primary-500">{dataString === new Date().toLocaleDateString('pt-BR') ? "Hoje" : dataString}</h4> </div>
                         {historicoPrincipal[dataString].map(it => (
-                          <div key={it.id} className="flex justify-between items-center p-4 bg-[var(--color-bg-page)] rounded-2xl group transition-all">
-                            <div className="flex items-center gap-3"> <div className={`w-1 h-8 rounded-full ${it.fonte ? 'bg-emerald-500' : 'bg-red-500'}`} /> <div className="truncate"> <p className="font-black text-xs truncate">{it.fonte || it.categoria}</p> <p className="text-[9px] opacity-40 font-bold uppercase">{it.hora}</p> </div> </div>
-                            <div className="flex items-center gap-3"> <span className={`font-black text-xs ${it.fonte ? 'text-emerald-500' : ''}`}>{it.fonte ? '+' : '-'} {formatar(it.valor)}</span> <button onClick={() => deleteItem(it.fonte ? 'receitas':'gastos', it.id)} className="text-zinc-300 hover:text-red-500 transition-all"><Trash2 size={16}/></button> </div>
+                          <div key={it.id} className="flex justify-between items-center p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl group transition-all">
+                            <div className="flex items-center gap-2 sm:gap-3"> <div className={`w-1 h-6 sm:h-8 rounded-full ${it.fonte ? 'bg-emerald-500' : 'bg-red-500'}`} /> <div className="truncate"> <p className="font-black text-[10px] sm:text-xs truncate">{it.fonte || it.categoria}</p> <p className="text-[8px] sm:text-[9px] opacity-40 font-bold uppercase">{it.hora}</p> </div> </div>
+                            <div className="flex items-center gap-2 sm:gap-3"> <span className={`font-black text-[10px] sm:text-xs ${it.fonte ? 'text-emerald-500' : ''}`}>{it.fonte ? '+' : '-'} {formatar(it.valor)}</span> <button onClick={() => deleteItem(it.fonte ? 'receitas':'gastos', it.id)} className="text-zinc-300 hover:text-red-500 transition-all"><Trash2 size={14} className="sm:w-4 sm:h-4" /></button> </div>
                           </div>
                         ))}
                       </div>
@@ -448,25 +458,25 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                   </div>
                 </div>
 
-                <div className="bg-[var(--color-bg-card)] p-6 sm:p-10 rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
-                  <div className="flex justify-between items-center mb-8 gap-4 flex-wrap"> 
-                    <h3 className="text-xs font-black uppercase opacity-60">Fatura de Crédito</h3> 
-                    <div className="relative w-full sm:w-48 group"> <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary-500 transition-colors" /> <input value={searchTermCredito} onChange={(e) => setSearchTermCredito(e.target.value)} placeholder="Buscar crédito..." className="w-full pl-9 pr-4 py-2 bg-[var(--color-bg-page)] rounded-xl outline-none text-[10px] font-bold border border-transparent transition-all" /> </div>
+                <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3"> 
+                    <h3 className="text-[10px] sm:text-xs font-black uppercase opacity-60">Fatura de Crédito</h3> 
+                    <div className="relative w-full sm:w-48 group"> <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary-500 transition-colors" /> <input value={searchTermCredito} onChange={(e) => setSearchTermCredito(e.target.value)} placeholder="Buscar crédito..." className="w-full pl-9 pr-4 py-2 bg-[var(--color-bg-page)] rounded-xl outline-none text-[10px] sm:text-xs font-bold border border-transparent transition-all" /> </div>
                   </div>
-                  <div className="space-y-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-4 sm:space-y-6 max-h-64 sm:max-h-96 overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                     {Object.keys(historicoCredito).map(dataString => (
-                      <div key={dataString} className="space-y-3">
-                        <div className="sticky top-0 z-10 py-1 bg-[var(--color-bg-card)]/80 backdrop-blur-md"> <h4 className="text-[9px] font-black uppercase tracking-widest text-primary-500">{dataString}</h4> </div>
+                      <div key={dataString} className="space-y-2 sm:space-y-3">
+                        <div className="sticky top-0 z-10 py-1 bg-[var(--color-bg-card)]/80 backdrop-blur-md"> <h4 className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-primary-500">{dataString}</h4> </div>
                         {historicoCredito[dataString].map(it => (
-                          <div key={it.id} className="flex justify-between items-center p-4 bg-[var(--color-bg-page)] rounded-2xl border border-primary-500/5 group">
-                            <div className="flex items-center gap-3 truncate"> 
-                              <div className="w-1 h-8 rounded-full bg-primary-500 shrink-0" /> 
+                          <div key={it.id} className="flex justify-between items-center p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl border border-primary-500/5 group">
+                            <div className="flex items-center gap-2 sm:gap-3 truncate"> 
+                              <div className="w-1 h-6 sm:h-8 rounded-full bg-primary-500 shrink-0" /> 
                               <div className="truncate"> 
-                                <p className="font-black text-xs truncate">{it.categoria}</p> 
-                                <p className="text-[8px] font-bold text-primary-500 uppercase">{data.cartoes.find(c => c.id === it.cartao_id)?.nome} • {it.hora} {it.fatura_paga ? '(PAGO)' : ''}</p> 
+                                <p className="font-black text-[10px] sm:text-xs truncate">{it.categoria}</p> 
+                                <p className="text-[7px] sm:text-[8px] font-bold text-primary-500 uppercase truncate">{data.cartoes.find(c => c.id === it.cartao_id)?.nome} • {it.hora} {it.fatura_paga ? '(PAGO)' : ''}</p> 
                               </div> 
                             </div>
-                            <div className="flex items-center gap-3"> <span className="font-black text-xs">- {formatar(it.valor)}</span> <button onClick={() => deleteItem('gastos', it.id)} className="text-zinc-300 hover:text-red-500 transition-all"><Trash2 size={16}/></button> </div>
+                            <div className="flex items-center gap-2 sm:gap-3"> <span className="font-black text-[10px] sm:text-xs">- {formatar(it.valor)}</span> <button onClick={() => deleteItem('gastos', it.id)} className="text-zinc-300 hover:text-red-500 transition-all"><Trash2 size={14} className="sm:w-4 sm:h-4" /></button> </div>
                           </div>
                         ))}
                       </div>
@@ -477,28 +487,39 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
             </motion.div>
           ) : activeTab === 'analises' ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-10 text-center">
-              <div className="bg-[var(--color-bg-card)] p-6 sm:p-12 rounded-[2.5rem] border border-[var(--color-border)] shadow-xl text-center">
-                 <h3 className="text-xl sm:text-2xl font-black mb-8 text-center uppercase tracking-tighter">Análise Mensal</h3>
-                 <div className={`${isMobile ? 'h-[600px]' : 'h-96'} w-full`}>
+              <div className="bg-[var(--color-bg-card)] p-4 sm:p-8 lg:p-12 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-xl text-center">
+                 <h3 className="text-lg sm:text-2xl font-black mb-6 sm:mb-8 text-center uppercase tracking-tighter">Análise Mensal</h3>
+                 <div className="h-[400px] sm:h-[500px] w-full">
                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={meses.map((m, i) => ({ name: m, renda: data.receitas.filter(r=>r.mes===i && Number(r.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0), gastos: data.gastos.filter(g=>g.mes===i && Number(g.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0) }))} layout={isMobile ? "vertical" : "horizontal"}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={!isMobile} horizontal={isMobile} strokeOpacity={0.05} /> <XAxis dataKey="name" hide={isMobile} tick={{fontSize: 10, fontWeight: '900'}} /> <YAxis hide /> <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '20px', border: 'none'}} />
-                        <Bar dataKey="renda" fill="#10b981" radius={[4, 4, 0, 0]} /> <Bar dataKey="gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                      <BarChart data={meses.map((m, i) => ({ name: m, renda: data.receitas.filter(r=>r.mes===i && Number(r.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0), gastos: data.gastos.filter(g=>g.mes===i && Number(g.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0) }))} layout={isMobile ? "vertical" : "horizontal"} margin={{ left: isMobile ? -20 : 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={!isMobile} horizontal={isMobile} strokeOpacity={0.05} /> 
+                        
+                        {/* Correção 2: Os Eixos agora sabem se são de categoria ou número */}
+                        <XAxis type={isMobile ? "number" : "category"} dataKey={isMobile ? undefined : "name"} hide={isMobile} tick={{fontSize: 9, fontWeight: '900'}} /> 
+                        <YAxis type={isMobile ? "category" : "number"} dataKey={isMobile ? "name" : undefined} hide={!isMobile} tick={{fontSize: 9, fontWeight: '900'}} axisLine={false} tickLine={false} width={70} /> 
+                        
+                        {/* Correção 3: Tooltip agora formata o valor em R$ */}
+                        <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{borderRadius: '15px', border: 'none', fontSize: '10px', fontWeight: '900'}} />
+                        
+                        <Bar dataKey="renda" fill="#10b981" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20} /> 
+                        <Bar dataKey="gastos" fill="#ef4444" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20} />
                       </BarChart>
                    </ResponsiveContainer>
                  </div>
               </div>
             </motion.div>
           ) : (
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto space-y-8">
-              <div className="bg-[var(--color-bg-card)] p-8 sm:p-12 rounded-[3rem] border border-[var(--color-border)] shadow-xl text-center">
-                <h3 className="text-2xl font-black mb-8 flex items-center justify-center gap-3"> <User className="text-primary-500" /> Perfil </h3>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <input value={newUserName} onChange={(e) => setNewUserName(e.target.value)} className="flex-1 p-4 bg-[var(--color-bg-page)] rounded-2xl outline-none font-bold focus:ring-2 ring-primary-500" />
-                  <button onClick={handleUpdateName} disabled={isUpdating || newUserName === userName} className="px-8 py-4 bg-primary-600 text-white rounded-2xl font-black transition-all"> {isUpdating ? "Salvando..." : "Salvar"} </button>
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
+              <div className="bg-[var(--color-bg-card)] p-6 sm:p-12 rounded-3xl lg:rounded-[3rem] border border-[var(--color-border)] shadow-xl text-center">
+                <h3 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-center gap-3"> <User className="text-primary-500" /> Perfil </h3>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <input value={newUserName} onChange={(e) => setNewUserName(e.target.value)} className="flex-1 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-bold text-sm sm:text-base focus:ring-2 ring-primary-500" />
+                  <button onClick={handleUpdateName} disabled={isUpdating || newUserName === userName} className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 bg-primary-600 text-white rounded-xl sm:rounded-2xl font-black transition-all"> {isUpdating ? "Salvando..." : "Salvar"} </button>
                 </div>
               </div>
-              <div className="bg-red-500/10 p-8 rounded-[3rem] border border-red-500/20 text-center"> <button onClick={handleDeleteAccount} className="px-6 py-3 bg-red-500 text-white rounded-xl font-black text-xs uppercase">Excluir Minha Conta</button> </div>
+              <div className="bg-red-500/10 p-6 sm:p-8 rounded-3xl lg:rounded-[3rem] border border-red-500/20 text-center"> 
+                <button onClick={handleDeleteAccount} className="w-full sm:w-auto px-6 py-3 sm:py-4 bg-red-500 text-white rounded-xl font-black text-[10px] sm:text-xs uppercase">Excluir Minha Conta</button> 
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -507,6 +528,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   );
 }
 
-function SidebarItem({ icon, label, active, onClick }) { return ( <button onClick={onClick} className={`flex items-center gap-4 w-full p-4 rounded-2xl transition-all cursor-pointer ${active ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30 scale-105' : 'opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}> {icon} <span className="font-black text-[10px] uppercase tracking-widest">{label}</span> </button> ); }
-function ResumoItem({ label, value, color, icon }) { return ( <div className="bg-[var(--color-bg-card)] p-6 rounded-[2.5rem] border border-[var(--color-border)] shadow-sm text-center"> <div className={`mb-4 mx-auto p-3 w-fit rounded-xl bg-[var(--color-bg-page)] ${color}`}>{icon}</div> <p className="text-[9px] font-black uppercase mb-1 opacity-40">{label}</p> <p className="text-xl font-black tracking-tight">{value}</p> </div> ); }
-function CardInput({ title, children, color }) { return ( <div className="bg-[var(--color-bg-card)] p-6 sm:p-8 rounded-[2rem] border border-[var(--color-border)] shadow-sm w-full relative"> <h3 className={`text-[10px] font-black uppercase mb-6 tracking-widest flex items-center gap-2 ${color}`}><Plus size={14}/> {title}</h3> <div className="flex gap-3">{children}</div> </div> ); }
+function SidebarItem({ icon, label, active, onClick }) { return ( <button onClick={onClick} className={`flex items-center gap-3 sm:gap-4 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all cursor-pointer ${active ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30 scale-105' : 'opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}> {icon} <span className="font-black text-[9px] sm:text-[10px] uppercase tracking-widest">{label}</span> </button> ); }
+function ResumoItem({ label, value, color, icon }) { return ( <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm text-center flex flex-col justify-center h-full"> <div className={`mb-3 sm:mb-4 mx-auto p-2 sm:p-3 w-fit rounded-lg sm:rounded-xl bg-[var(--color-bg-page)] ${color}`}>{icon}</div> <p className="text-[8px] sm:text-[9px] font-black uppercase mb-1 opacity-40">{label}</p> <p className="text-sm sm:text-lg lg:text-xl font-black tracking-tight">{value}</p> </div> ); }
+function CardInput({ title, children, color }) { return ( <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-8 rounded-3xl lg:rounded-[2rem] border border-[var(--color-border)] shadow-sm w-full relative"> <h3 className={`text-[10px] sm:text-[11px] font-black uppercase mb-4 sm:mb-6 tracking-widest flex items-center gap-2 ${color}`}><Plus size={14}/> {title}</h3> <div className="flex gap-2 sm:gap-3">{children}</div> </div> ); }

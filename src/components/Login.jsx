@@ -39,7 +39,12 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
 
   const handleOAuth = async (provider) => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider });
+      const { error } = await supabase.auth.signInWithOAuth({ 
+        provider,
+        options: {
+          redirectTo: window.location.origin 
+        }
+      });
       if (error) throw error;
     } catch (err) {
       showToast("Erro ao conectar com " + provider + ": " + err.message, "error");
@@ -198,12 +203,12 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
           <div className="toggle">
             <div className="toggle-panel toggle-left">
               <h1 style={{ fontSize: '32px', fontWeight: 'bold' }}>Bem-vindo de volta!</h1>
-              <p style={{ color: '#fff' }}>Insira seus dados pessoais para usar todos os recursos do site</p>
+              <p style={{ color: '#fff' }}>Insira seus dados para usar todos os recursos do site</p>
               <button type="button" className="hidden-btn" onClick={() => setIsSignUp(false)}>Entrar</button>
             </div>
             <div className="toggle-panel toggle-right">
               <h1 style={{ fontSize: '32px', fontWeight: 'bold' }}>Olá, amigo!</h1>
-              <p style={{ color: '#fff' }}>Cadastre-se com seus dados pessoais para começar a gerenciar seu dinheiro</p>
+              <p style={{ color: '#fff' }}>Cadastre-se com seus dados para começar a gerenciar seu dinheiro</p>
               <button type="button" className="hidden-btn" onClick={() => setIsSignUp(true)}>Inscreva-se</button>
             </div>
           </div>
