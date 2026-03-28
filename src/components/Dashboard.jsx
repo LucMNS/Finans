@@ -73,7 +73,7 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [cNome, setCNome] = useState(''); const [cFechamento, setCFechamento] = useState('');
   const [rFonte, setRFonte] = useState(''); const [rValor, setRValor] = useState('');
   const [gCat, setGCat] = useState(''); const [gValor, setGValor] = useState('');
-  
+  const [novaCatInput, setNovaCatInput] = useState('');
   const [selectedCardId, setSelectedCardId] = useState('dinheiro');
   const [isUpdating, setIsUpdating] = useState(false);
   const [newUserName, setNewUserName] = useState(userName);
@@ -82,10 +82,8 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
 
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
-  const [novaCatInput, setNovaCatInput] = useState('');
   const [editingCat, setEditingCat] = useState({ oldName: '', newName: '' });
 
-  // --- NOVO: ESTADO DA PREFERÊNCIA DE AVANÇO AUTOMÁTICO (Salvo no navegador) ---
   const [autoForwardExpenses, setAutoForwardExpenses] = useState(() => {
     const saved = localStorage.getItem('finans_autoForward');
     return saved !== null ? JSON.parse(saved) : false;
@@ -176,7 +174,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     let targetMonth = selectedMonth;
     let targetYear = Number(selectedYear);
 
-    // --- NOVA LÓGICA: SÓ AVANÇA O MÊS SE A PREFERÊNCIA ESTIVER ATIVADA ---
     if (autoForwardExpenses && selectedCardId !== 'dinheiro') {
       const card = data.cartoes.find(c => c.id === selectedCardId);
       if (card && diaHoje > card.dia_fechamento) {
@@ -664,7 +661,9 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                                 <Cell 
                                   key={i} 
                                   fill={CHART_COLORS[i % CHART_COLORS.length]} 
-                                  fillOpacity={activeIndex === i ? 1 : 0.3}
+                                  fillOpacity={1}
+                                  stroke={activeIndex === i ? (isDarkMode ? '#ffffff' : '#18181b') : 'transparent'}
+                                  strokeWidth={activeIndex === i ? 2 : 0}
                                   className="transition-all duration-300"
                                 />
                               ))} 
@@ -686,7 +685,9 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                                 <Cell 
                                   key={i} 
                                   fill={CHART_COLORS[i % CHART_COLORS.length]} 
-                                  fillOpacity={activeIndex === i ? 1 : 0.3}
+                                  fillOpacity={1}
+                                  stroke={activeIndex === i ? (isDarkMode ? '#ffffff' : '#18181b') : 'transparent'}
+                                  strokeWidth={activeIndex === i ? 2 : 0}
                                   className="transition-all duration-300"
                                 />
                               ))} 
@@ -800,12 +801,24 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                         
                         <Bar dataKey="renda" fill="#10b981" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20}>
                           {analisesData.map((e, i) => (
-                            <Cell key={`renda-${i}`} fillOpacity={activeMonthIndex === i ? 1 : 0.3} className="transition-all duration-300" />
+                            <Cell 
+                              key={`renda-${i}`} 
+                              fillOpacity={1} 
+                              stroke={activeMonthIndex === i ? (isDarkMode ? '#ffffff' : '#18181b') : 'transparent'}
+                              strokeWidth={activeMonthIndex === i ? 2 : 0}
+                              className="transition-all duration-300" 
+                            />
                           ))}
                         </Bar> 
                         <Bar dataKey="gastos" fill="#ef4444" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20}>
                           {analisesData.map((e, i) => (
-                            <Cell key={`gastos-${i}`} fillOpacity={activeMonthIndex === i ? 1 : 0.3} className="transition-all duration-300" />
+                            <Cell 
+                              key={`gastos-${i}`} 
+                              fillOpacity={1} 
+                              stroke={activeMonthIndex === i ? (isDarkMode ? '#ffffff' : '#18181b') : 'transparent'}
+                              strokeWidth={activeMonthIndex === i ? 2 : 0}
+                              className="transition-all duration-300" 
+                            />
                           ))}
                         </Bar>
                       </BarChart>
@@ -823,7 +836,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                 </div>
               </div>
               
-              {/* --- NOVA: ABA DE PREFERÊNCIAS EM CONFIGURAÇÕES --- */}
               <div className="bg-[var(--color-bg-card)] p-6 sm:p-12 rounded-3xl lg:rounded-[3rem] border border-[var(--color-border)] shadow-xl text-left">
                 <h3 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center gap-3"> <Settings className="text-primary-500" /> Preferências </h3>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 sm:p-6 bg-[var(--color-bg-page)] rounded-2xl border border-[var(--color-border)]">
