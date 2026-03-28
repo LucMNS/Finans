@@ -6,7 +6,7 @@ import {
   PieChart as PieChartIcon, Settings, User, Save, List, Search,
   Power, Edit2, CreditCard, CheckCircle2, Banknote, AlertCircle
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Sector } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Sector } from 'recharts';
 import { supabase } from '../lib/supabase';
 
 // --- CONSTANTES E CORES ---
@@ -58,6 +58,7 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [searchTermCredito, setSearchTermCredito] = useState("");
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [activeMonthIndex, setActiveMonthIndex] = useState(new Date().getMonth()); // Para o gráfico de Análises
 
   const [data, setData] = useState({ receitas: [], gastos: [], cats: [], mensalidades: [], cartoes: [] });
 
@@ -116,6 +117,13 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     return Object.keys(map).map(c => ({ name: c, value: map[c], percString: totalExpenses > 0 ? ((map[c]/totalExpenses)*100).toFixed(0) + '%' : '0%' })).sort((a, b) => b.value - a.value);
   }, [data, totalExpenses, selectedMonth, selectedYear]);
 
+  const analisesData = useMemo(() => meses.map((m, i) => ({
+    name: m,
+    renda: data.receitas.filter(r=>r.mes===i && Number(r.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0),
+    gastos: data.gastos.filter(g=>g.mes===i && Number(g.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0)
+  })), [data, selectedYear]);
+
+  // Reseta os estados quando muda a data
   useEffect(() => { setActiveIndex(0); }, [selectedMonth, selectedYear, distView]);
 
   const pagarFatura = async (cartaoId) => {
@@ -275,11 +283,12 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
 
   const isMobile = window.innerWidth < 768;
 
-  // Lógica segura e simplificada para cliques no gráfico
-  const onPieClick = (_, index) => {
-    if (typeof index === 'number') {
-      setActiveIndex(index);
-    }
+  const handleChartClick = (_, index) => {
+    if (typeof index === 'number') setActiveIndex(index);
+  };
+
+  const handleAnaliseClick = (_, index) => {
+    if (typeof index === 'number') setActiveMonthIndex(index);
   };
 
   const renderActiveShape = (props) => {
@@ -301,14 +310,8 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-bg-page)] transition-all relative">
       
-      {/* MÁGICA GLOBAL DO CSS PARA EXTERMINAR CONTORNOS E FOCOS DOS GRÁFICOS */}
       <style>{`
-        .recharts-wrapper,
-        .recharts-wrapper svg,
-        .recharts-surface,
-        .recharts-sector,
-        .recharts-pie-sector,
-        g {
+        .recharts-wrapper, .recharts-wrapper svg, .recharts-surface, .recharts-sector, .recharts-pie-sector, .recharts-bar-rectangle, g {
           outline: none !important;
           -webkit-tap-highlight-color: transparent !important;
         }
@@ -458,6 +461,7 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                 <ResumoItem label="Despesas" value={formatar(totalExpenses)} color="text-red-500" icon={<TrendingUp size={18}/>}/>
               </div>
 
+              {/* GRÁFICO DINÂMICO UNIFICADO COM PLACAR FLUTUANTE AJUSTADO */}
               <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm relative overflow-visible lg:col-span-1">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 pr-2"> 
                    <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Gráfico por Categoria</h3>
@@ -467,6 +471,18 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                      <button onClick={() => setDistView('pie')} className={`flex-1 sm:flex-none p-2 flex justify-center rounded-lg transition-all ${distView === 'pie' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Rodela"><PieChartIcon size={14}/></button>
                    </div>
                  </div>
+
+                 {/* CORREÇÃO DO POSICIONAMENTO: Empurrado um pouco para baixo no Desktop */}
+                 {distView !== 'pie' && dadosPizza.length > 0 && dadosPizza[activeIndex] && (
+                   <div className="absolute top-[88px] right-6 sm:top-[90px] sm:right-10 lg:top-[110px] lg:right-12 bg-[var(--color-bg-page)]/90 backdrop-blur-md border border-[var(--color-border)] px-4 py-2 rounded-2xl shadow-xl z-20 flex flex-col items-end pointer-events-none transition-all">
+                     <span className="text-[10px] sm:text-xs font-black uppercase" style={{ color: CHART_COLORS[activeIndex % CHART_COLORS.length] }}>
+                       {dadosPizza[activeIndex].name}
+                     </span>
+                     <span className="text-xs sm:text-sm font-bold text-zinc-300">
+                       {formatar(dadosPizza[activeIndex].value)}
+                     </span>
+                   </div>
+                 )}
                  
                  <div className="w-full overflow-x-auto overflow-y-auto custom-scrollbar max-h-[350px] sm:max-h-[450px]">
                    <div style={{
@@ -486,38 +502,54 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                               cornerRadius={6}
                               activeIndex={activeIndex < dadosPizza.length ? activeIndex : 0} 
                               activeShape={renderActiveShape} 
-                              // SIMPLIFICAÇÃO: Apenas hover (para PC) e click (para celular) funcionam nativamente!
-                              onMouseEnter={onPieClick} 
-                              onClick={onPieClick}
+                              onMouseEnter={handleChartClick} 
+                              onClick={handleChartClick}
+                              onTouchStart={handleChartClick}
                             > 
                               {dadosPizza.map((e, i) => (
-                                <Cell 
-                                  key={i} 
-                                  fill={CHART_COLORS[i % CHART_COLORS.length]} 
-                                  className="cursor-pointer" 
-                                />
+                                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} className="cursor-pointer" />
                               ))} 
                             </Pie> 
                           </PieChart> 
                         ) : 
                         distView === 'horizontal' ? ( 
-                          <BarChart layout="vertical" data={dadosPizza} margin={{ left: 0, right: 30, top: 0, bottom: 0 }}> 
+                          <BarChart layout="vertical" data={dadosPizza} margin={{ left: 0, right: 30, top: 20, bottom: 20 }}> 
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.05} /> 
                             <XAxis type="number" hide /> 
-                            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} width={90} tickFormatter={(v) => v.length > 12 ? v.substring(0, 12) + '...' : v} /> 
-                            <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> 
+                            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} width={90} interval={0} tickFormatter={(v) => v.length > 12 ? v.substring(0, 12) + '...' : v} padding={{ top: 10, bottom: 10 }} /> 
+                            {/* TOOLTIP NATIVO REMOVIDO PARA USAR O PLACAR FLUTUANTE */}
                             <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}> 
-                              {dadosPizza.map((e, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)} 
+                              {dadosPizza.map((e, i) => (
+                                <Cell 
+                                  key={i} 
+                                  fill={CHART_COLORS[i % CHART_COLORS.length]} 
+                                  fillOpacity={activeIndex === i ? 1 : 0.3}
+                                  onClick={() => handleChartClick(null, i)}
+                                  onTouchStart={() => handleChartClick(null, i)}
+                                  onMouseEnter={() => handleChartClick(null, i)}
+                                  className="cursor-pointer transition-all duration-300"
+                                />
+                              ))} 
                             </Bar> 
                           </BarChart> 
                         ) : ( 
-                          <BarChart data={dadosPizza} margin={{ top: 10, bottom: 10, left: -20 }}> 
+                          <BarChart data={dadosPizza} margin={{ top: 20, bottom: 20, left: -20, right: 10 }}> 
                             <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} /> 
-                            <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + '...' : v} /> 
+                            <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} interval={0} padding={{ left: 20, right: 20 }} tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + '...' : v} /> 
                             <YAxis type="number" hide /> 
-                            <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> 
+                            {/* TOOLTIP NATIVO REMOVIDO PARA USAR O PLACAR FLUTUANTE */}
                             <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={20}> 
-                              {dadosPizza.map((e, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)} 
+                              {dadosPizza.map((e, i) => (
+                                <Cell 
+                                  key={i} 
+                                  fill={CHART_COLORS[i % CHART_COLORS.length]} 
+                                  fillOpacity={activeIndex === i ? 1 : 0.3}
+                                  onClick={() => handleChartClick(null, i)}
+                                  onTouchStart={() => handleChartClick(null, i)}
+                                  onMouseEnter={() => handleChartClick(null, i)}
+                                  className="cursor-pointer transition-all duration-300"
+                                />
+                              ))} 
                             </Bar> 
                           </BarChart> 
                         )}
@@ -587,18 +619,62 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
               </div>
             </motion.div>
           ) : activeTab === 'analises' ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-10 text-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-10 text-center relative">
+              
+              {/* PLACAR FLUTUANTE DA ANÁLISE ANUAL (mantido como estava pois não cobre botões) */}
+              {analisesData.length > 0 && analisesData[activeMonthIndex] && (
+                <div className="absolute top-4 right-4 sm:top-8 sm:right-8 bg-[var(--color-bg-page)]/90 backdrop-blur-md border border-[var(--color-border)] px-4 py-3 rounded-2xl shadow-xl z-20 flex flex-col items-end pointer-events-none transition-all">
+                  <span className="text-[10px] sm:text-xs font-black uppercase text-zinc-300 mb-2">
+                    {analisesData[activeMonthIndex].name} de {selectedYear}
+                  </span>
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-end">
+                      <span className="text-[8px] font-bold text-emerald-500 uppercase">Renda</span>
+                      <span className="text-xs sm:text-sm font-black text-emerald-500">{formatar(analisesData[activeMonthIndex].renda)}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[8px] font-bold text-red-500 uppercase">Gastos</span>
+                      <span className="text-xs sm:text-sm font-black text-red-500">{formatar(analisesData[activeMonthIndex].gastos)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-[var(--color-bg-card)] p-4 sm:p-8 lg:p-12 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-xl text-center">
-                 <h3 className="text-lg sm:text-2xl font-black mb-6 sm:mb-8 text-center uppercase tracking-tighter">Análise Mensal</h3>
+                 <h3 className="text-lg sm:text-2xl font-black mb-12 sm:mb-16 text-left uppercase tracking-tighter">Análise Mensal</h3>
                  <div className="h-[400px] sm:h-[500px] w-full">
                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={meses.map((m, i) => ({ name: m, renda: data.receitas.filter(r=>r.mes===i && Number(r.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0), gastos: data.gastos.filter(g=>g.mes===i && Number(g.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0) }))} layout={isMobile ? "vertical" : "horizontal"} margin={{ left: isMobile ? -20 : 0, bottom: 0 }}>
+                      <BarChart data={analisesData} layout={isMobile ? "vertical" : "horizontal"} margin={{ left: isMobile ? -20 : 0, bottom: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={!isMobile} horizontal={isMobile} strokeOpacity={0.05} /> 
-                        <XAxis type={isMobile ? "number" : "category"} dataKey={isMobile ? undefined : "name"} hide={isMobile} tick={{fontSize: 9, fontWeight: '900'}} /> 
-                        <YAxis type={isMobile ? "category" : "number"} dataKey={isMobile ? "name" : undefined} hide={!isMobile} tick={{fontSize: 9, fontWeight: '900'}} axisLine={false} tickLine={false} width={70} /> 
-                        <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{borderRadius: '15px', border: 'none', fontSize: '10px', fontWeight: '900'}} />
-                        <Bar dataKey="renda" fill="#10b981" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20} /> 
-                        <Bar dataKey="gastos" fill="#ef4444" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20} />
+                        <XAxis type={isMobile ? "number" : "category"} dataKey={isMobile ? undefined : "name"} hide={isMobile} tick={{fontSize: 9, fontWeight: '900'}} padding={{ left: 20, right: 20 }} interval={0} tickFormatter={(v) => v.substring(0,3)} /> 
+                        <YAxis type={isMobile ? "category" : "number"} dataKey={isMobile ? "name" : undefined} hide={!isMobile} tick={{fontSize: 9, fontWeight: '900'}} axisLine={false} tickLine={false} width={70} interval={0} padding={{ top: 10, bottom: 10 }} /> 
+                        
+                        {/* TOOLTIP NATIVO REMOVIDO DAQUI TAMBÉM */}
+                        
+                        <Bar dataKey="renda" fill="#10b981" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20}>
+                          {analisesData.map((e, i) => (
+                            <Cell 
+                              key={`renda-${i}`} 
+                              fillOpacity={activeMonthIndex === i ? 1 : 0.3}
+                              onClick={() => handleAnaliseClick(null, i)}
+                              onTouchStart={() => handleAnaliseClick(null, i)}
+                              onMouseEnter={() => handleAnaliseClick(null, i)}
+                              className="cursor-pointer transition-all duration-300"
+                            />
+                          ))}
+                        </Bar> 
+                        <Bar dataKey="gastos" fill="#ef4444" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20}>
+                          {analisesData.map((e, i) => (
+                            <Cell 
+                              key={`gastos-${i}`} 
+                              fillOpacity={activeMonthIndex === i ? 1 : 0.3}
+                              onClick={() => handleAnaliseClick(null, i)}
+                              onTouchStart={() => handleAnaliseClick(null, i)}
+                              onMouseEnter={() => handleAnaliseClick(null, i)}
+                              className="cursor-pointer transition-all duration-300"
+                            />
+                          ))}
+                        </Bar>
                       </BarChart>
                    </ResponsiveContainer>
                  </div>
