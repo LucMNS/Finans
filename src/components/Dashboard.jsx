@@ -4,18 +4,20 @@ import {
   LayoutDashboard, BarChart3, Sun, Moon, Plus, Wallet, 
   Trash2, LogOut, Menu, X, TrendingUp, ChevronDown, Calendar, 
   PieChart as PieChartIcon, Settings, User, Save, List, Search,
-  Power, Edit2, CreditCard, CheckCircle2, Banknote, AlertCircle
+  Power, Edit2, CreditCard, CheckCircle2, Banknote, AlertCircle,
+  ToggleRight, ToggleLeft
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Sector } from 'recharts';
 import { supabase } from '../lib/supabase';
 
 // --- CONSTANTES E CORES ---
 const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-const anos = ["2024", "2025", "2026", "2027", "2028", "2029", "2030"];
+const anos = ["2024", "2025", "2026", "2027", "2028", "2029", "2030", "2031", "2032", "2033", "2034"];
 const CHART_COLORS = [
   '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#3b82f6', '#f97316', '#8b5cf6', '#14b8a6', 
   '#eab308', '#d946ef', '#0ea5e9', '#ef4444', '#84cc16', '#06b6d4', '#f43f5e', '#a855f7', 
-  '#059669', '#4f46e5', '#ea580c', '#db2777', '#2563eb', '#c026d3', '#0284c7', '#dc2626'
+  '#059669', '#4f46e5', '#ea580c', '#db2777', '#2563eb', '#c026d3', '#0284c7', '#dc2626', 
+  '#4338ca', '#b45309', '#9d174d', '#0f766e', '#4d7c0f', '#64748b'
 ];
 
 function SeletorAnimado({ value, options, onChange, icon: Icon, className = "" }) {
@@ -79,10 +81,19 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
 
-  // --- NOVOS ESTADOS PARA A GAVETA DE CATEGORIAS ---
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [novaCatInput, setNovaCatInput] = useState('');
   const [editingCat, setEditingCat] = useState({ oldName: '', newName: '' });
+
+  // --- NOVO: ESTADO DA PREFERÊNCIA DE AVANÇO AUTOMÁTICO (Salvo no navegador) ---
+  const [autoForwardExpenses, setAutoForwardExpenses] = useState(() => {
+    const saved = localStorage.getItem('finans_autoForward');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('finans_autoForward', JSON.stringify(autoForwardExpenses));
+  }, [autoForwardExpenses]);
 
   const showToast = (message, type = 'success') => {
     setToast({ visible: true, message, type });
@@ -165,9 +176,10 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     let targetMonth = selectedMonth;
     let targetYear = Number(selectedYear);
 
-    if (selectedCardId !== 'dinheiro') {
+    // --- NOVA LÓGICA: SÓ AVANÇA O MÊS SE A PREFERÊNCIA ESTIVER ATIVADA ---
+    if (autoForwardExpenses && selectedCardId !== 'dinheiro') {
       const card = data.cartoes.find(c => c.id === selectedCardId);
-      if (diaHoje > card.dia_fechamento) {
+      if (card && diaHoje > card.dia_fechamento) {
         targetMonth = (selectedMonth + 1) % 12;
         if (targetMonth === 0) targetYear += 1;
       }
@@ -220,7 +232,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     setCNome(''); setCFechamento(''); fetchDados();
   };
 
-  // --- NOVAS FUNÇÕES DA GAVETA DE CATEGORIAS ---
   const addCategoria = async () => { 
     if (!novaCatInput) return showToast("Digite um nome para a categoria!", "error"); 
     const { data: { user } } = await supabase.auth.getUser(); 
@@ -236,14 +247,9 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     }
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      // Atualiza o nome na tabela de Categorias
       await supabase.from('categorias').update({ nome: newName }).eq('user_id', user.id).eq('nome', oldName);
-      // Cascata: Atualiza o nome em todos os gastos passados que usavam esse nome
       await supabase.from('gastos').update({ categoria: newName }).eq('user_id', user.id).eq('categoria', oldName);
-      
-      // Se a categoria alterada estava selecionada no select de "Novo Gasto", atualiza ela lá também
       if (gCat === oldName) setGCat(newName);
-
       showToast("Categoria e histórico atualizados!", "success");
       fetchDados();
     } catch (err) {
@@ -260,7 +266,7 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
         const { data: { user: authUser } } = await supabase.auth.getUser(); 
         await supabase.from('categorias').delete().eq('user_id', authUser.id).eq('nome', n); 
         showToast("Categoria excluída.", "success");
-        if (gCat === n) setGCat(''); // Limpa o seletor se excluiu a que estava ativa
+        if (gCat === n) setGCat(''); 
         fetchDados(); 
       }
     );
@@ -384,7 +390,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
         }
       `}</style>
 
-      {/* --- MODAL DE GERENCIAMENTO DE CATEGORIAS --- */}
       <AnimatePresence>
         {isCatModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
@@ -443,7 +448,7 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
               <p className="text-xs sm:text-sm text-zinc-400 mb-8">{confirmModal.message}</p>
               <div className="flex gap-3 w-full">
                 <button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase bg-[var(--color-bg-page)] border border-[var(--color-border)] hover:bg-zinc-800 transition-all text-white">Cancelar</button>
-                <button onClick={() => { confirmModal.onConfirm(); setConfirmModal({ ...confirmModal, isOpen: false }); }} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase bg-red-500 hover:bg-red-600 transition-all text-white shadow-lg shadow-red-500/20">Excluir</button>
+                <button onClick={() => { confirmModal.onConfirm(); setConfirmModal({ ...confirmModal, isOpen: false }); }} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase bg-red-500 hover:bg-red-600 transition-all text-white shadow-lg shadow-red-500/20">Avançar</button>
               </div>
             </motion.div>
           </motion.div>
@@ -514,7 +519,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                       <SeletorAnimado value={selectedCardId === 'dinheiro' ? "Dinheiro" : data.cartoes.find(c => c.id === selectedCardId)?.nome} options={["Dinheiro", ...data.cartoes.map(c => c.nome)]} onChange={(v) => setSelectedCardId(v === "Dinheiro" ? "dinheiro" : data.cartoes.find(c => c.nome === v).id)} icon={CreditCard} className="flex-1 sm:w-40 min-w-0" />
                       <button onClick={addGasto} className="p-3 sm:p-4 w-full sm:w-auto bg-primary-600 text-white rounded-xl sm:rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus size={18}/></button>
                     </div>
-                    {/* --- BOTÃO DE GERENCIAR CATEGORIAS --- */}
                     <div className="flex items-center justify-end border-t border-[var(--color-border)] pt-3 sm:pt-4">
                       <button onClick={() => setIsCatModalOpen(true)} type="button" className="text-[10px] sm:text-xs font-black text-primary-500 uppercase flex items-center gap-1.5 hover:text-primary-400 transition-colors">
                         <Settings size={14} /> Gerenciar Categorias
@@ -818,6 +822,24 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                   <button onClick={handleUpdateName} disabled={isUpdating || newUserName === userName} className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 bg-primary-600 text-white rounded-xl sm:rounded-2xl font-black transition-all"> {isUpdating ? "Salvando..." : "Salvar"} </button>
                 </div>
               </div>
+              
+              {/* --- NOVA: ABA DE PREFERÊNCIAS EM CONFIGURAÇÕES --- */}
+              <div className="bg-[var(--color-bg-card)] p-6 sm:p-12 rounded-3xl lg:rounded-[3rem] border border-[var(--color-border)] shadow-xl text-left">
+                <h3 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center gap-3"> <Settings className="text-primary-500" /> Preferências </h3>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 sm:p-6 bg-[var(--color-bg-page)] rounded-2xl border border-[var(--color-border)]">
+                  <div>
+                    <h4 className="font-bold text-sm">Avanço Automático de Fatura</h4>
+                    <p className="text-xs text-zinc-400 mt-2 max-w-md">Se ativado, gastos lançados em um cartão após o seu dia de fechamento serão registrados automaticamente na fatura do mês seguinte.</p>
+                  </div>
+                  <button
+                    onClick={() => setAutoForwardExpenses(!autoForwardExpenses)}
+                    className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${autoForwardExpenses ? 'bg-primary-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                  >
+                    <span className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoForwardExpenses ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </div>
+
               <div className="bg-red-500/10 p-6 sm:p-8 rounded-3xl lg:rounded-[3rem] border border-red-500/20 text-center"> 
                 <button onClick={handleDeleteAccount} className="w-full sm:w-auto px-6 py-3 sm:py-4 bg-red-500 text-white rounded-xl font-black text-[10px] sm:text-xs uppercase">Excluir Minha Conta</button> 
               </div>
