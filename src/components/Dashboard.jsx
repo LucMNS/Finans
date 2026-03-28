@@ -6,12 +6,13 @@ import {
   PieChart as PieChartIcon, Settings, User, Save, List, Search,
   Power, Edit2, CreditCard, CheckCircle2, Banknote, AlertCircle
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Sector } from 'recharts';
 import { supabase } from '../lib/supabase';
 
-// --- CONSTANTES ---
+// --- CONSTANTES E CORES ---
 const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const anos = ["2024", "2025", "2026", "2027", "2028", "2029", "2030"];
+const CHART_COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#3b82f6', '#f97316', '#8b5cf6', '#14b8a6', '#eab308', '#d946ef', '#0ea5e9', '#ef4444', '#84cc16'];
 
 function SeletorAnimado({ value, options, onChange, icon: Icon, className = "" }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,6 +56,8 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [distView, setDistView] = useState('horizontal');
   const [searchTerm, setSearchTerm] = useState("");
   const [searchTermCredito, setSearchTermCredito] = useState("");
+
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const [data, setData] = useState({ receitas: [], gastos: [], cats: [], mensalidades: [], cartoes: [] });
 
@@ -112,6 +115,8 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     if (totalM > 0) map['Mensalidades'] = (map['Mensalidades'] || 0) + totalM;
     return Object.keys(map).map(c => ({ name: c, value: map[c], percString: totalExpenses > 0 ? ((map[c]/totalExpenses)*100).toFixed(0) + '%' : '0%' })).sort((a, b) => b.value - a.value);
   }, [data, totalExpenses, selectedMonth, selectedYear]);
+
+  useEffect(() => { setActiveIndex(0); }, [selectedMonth, selectedYear, distView]);
 
   const pagarFatura = async (cartaoId) => {
     await supabase.from('gastos').update({ fatura_paga: true }).eq('cartao_id', cartaoId).eq('mes', selectedMonth).eq('ano', Number(selectedYear));
@@ -270,9 +275,45 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
 
   const isMobile = window.innerWidth < 768;
 
+  // Lógica segura e simplificada para cliques no gráfico
+  const onPieClick = (_, index) => {
+    if (typeof index === 'number') {
+      setActiveIndex(index);
+    }
+  };
+
+  const renderActiveShape = (props) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
+    return (
+      <g>
+        <text x={cx} y={cy - 4} textAnchor="middle" fill={fill} className="text-[10px] sm:text-[11px] font-black uppercase">
+          {payload.name.length > 12 ? payload.name.substring(0, 12) + '...' : payload.name}
+        </text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fill="#a1a1aa" className="text-[9px] sm:text-[10px] font-bold">
+          {formatar(value)}
+        </text>
+        <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} cornerRadius={6} />
+        <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 12} outerRadius={outerRadius + 16} fill={fill} cornerRadius={4} />
+      </g>
+    );
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-bg-page)] transition-all relative">
       
+      {/* MÁGICA GLOBAL DO CSS PARA EXTERMINAR CONTORNOS E FOCOS DOS GRÁFICOS */}
+      <style>{`
+        .recharts-wrapper,
+        .recharts-wrapper svg,
+        .recharts-surface,
+        .recharts-sector,
+        .recharts-pie-sector,
+        g {
+          outline: none !important;
+          -webkit-tap-highlight-color: transparent !important;
+        }
+      `}</style>
+
       <AnimatePresence>
         {toast.visible && (
           <motion.div initial={{ opacity: 0, y: -50, scale: 0.9 }} animate={{ opacity: 1, y: 20, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-2xl border backdrop-blur-md font-bold text-[10px] sm:text-sm text-white w-[90%] sm:w-auto text-center justify-center ${toast.type === 'error' ? 'bg-red-500/20 border-red-500/50 shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-500/20'}`}>
@@ -299,7 +340,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
         </motion.aside>
       )}
 
-      {/* Correção 1: Margem esquerda estendida no Desktop (lg:pl-28) para não colidir com o botão de Menu */}
       <main className={`flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12 transition-all duration-300 ${isMenuOpen ? 'lg:pl-80' : 'pl-4 sm:pl-8 lg:pl-28'}`}>
         
         <header className="mb-6 sm:mb-8 mt-16 lg:mt-0 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
@@ -420,21 +460,82 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
 
               <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm relative overflow-visible lg:col-span-1">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 pr-2"> 
-                   <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Gráfico</h3>
+                   <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Gráfico por Categoria</h3>
                    <div className="flex bg-[var(--color-bg-page)] p-1 rounded-xl border border-[var(--color-border)] w-full sm:w-auto justify-center">
                      <button onClick={() => setDistView('horizontal')} className={`flex-1 sm:flex-none p-2 flex justify-center rounded-lg transition-all ${distView === 'horizontal' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Barra Horizontal"><List size={14}/></button>
                      <button onClick={() => setDistView('vertical')} className={`flex-1 sm:flex-none p-2 flex justify-center rounded-lg transition-all ${distView === 'vertical' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Barra Vertical"><BarChart3 size={14}/></button>
                      <button onClick={() => setDistView('pie')} className={`flex-1 sm:flex-none p-2 flex justify-center rounded-lg transition-all ${distView === 'pie' ? 'bg-primary-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`} title="Rodela"><PieChartIcon size={14}/></button>
                    </div>
                  </div>
-                 <div className="h-56 sm:h-64 w-full">
-                   <ResponsiveContainer width="100%" height="100%">
-                      {distView === 'pie' ? ( <PieChart> <Pie data={dadosPizza} innerRadius={isMobile ? 50 : 65} outerRadius={isMobile ? 75 : 90} dataKey="value" stroke="none" paddingAngle={5} cornerRadius={6}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} className="hover:opacity-80 transition-opacity cursor-pointer outline-none" />)} </Pie> <Tooltip formatter={(value) => formatar(value)} contentStyle={{ borderRadius: '20px', border: 'none', fontWeight: '900', fontSize: '12px' }} /> </PieChart> ) : 
-                      distView === 'horizontal' ? ( <BarChart layout="vertical" data={dadosPizza} margin={{ left: 0, right: 10 }}> <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.05} /> <XAxis type="number" hide /> <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} width={70} /> <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={16}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} />)} </Bar> </BarChart> ) : 
-                      ( <BarChart data={dadosPizza} margin={{ top: 10, bottom: 10, left: -20 }}> <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} /> <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} /> <YAxis type="number" hide /> <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={20}> {dadosPizza.map((e, i) => <Cell key={i} fill={`hsl(${i*50}, 70%, 55%)`} />)} </Bar> </BarChart> )}
-                   </ResponsiveContainer>
+                 
+                 <div className="w-full overflow-x-auto overflow-y-auto custom-scrollbar max-h-[350px] sm:max-h-[450px]">
+                   <div style={{
+                     height: distView === 'horizontal' ? Math.max(250, dadosPizza.length * 40) : (isMobile ? 250 : 300),
+                     minWidth: distView === 'vertical' ? Math.max(isMobile ? 300 : 400, dadosPizza.length * 45) : '100%'
+                   }}>
+                     <ResponsiveContainer width="100%" height="100%">
+                        {distView === 'pie' ? ( 
+                          <PieChart> 
+                            <Pie 
+                              data={dadosPizza} 
+                              innerRadius={isMobile ? 65 : 80} 
+                              outerRadius={isMobile ? 90 : 105} 
+                              dataKey="value" 
+                              stroke="none" 
+                              paddingAngle={5} 
+                              cornerRadius={6}
+                              activeIndex={activeIndex < dadosPizza.length ? activeIndex : 0} 
+                              activeShape={renderActiveShape} 
+                              // SIMPLIFICAÇÃO: Apenas hover (para PC) e click (para celular) funcionam nativamente!
+                              onMouseEnter={onPieClick} 
+                              onClick={onPieClick}
+                            > 
+                              {dadosPizza.map((e, i) => (
+                                <Cell 
+                                  key={i} 
+                                  fill={CHART_COLORS[i % CHART_COLORS.length]} 
+                                  className="cursor-pointer" 
+                                />
+                              ))} 
+                            </Pie> 
+                          </PieChart> 
+                        ) : 
+                        distView === 'horizontal' ? ( 
+                          <BarChart layout="vertical" data={dadosPizza} margin={{ left: 0, right: 30, top: 0, bottom: 0 }}> 
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.05} /> 
+                            <XAxis type="number" hide /> 
+                            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} width={90} tickFormatter={(v) => v.length > 12 ? v.substring(0, 12) + '...' : v} /> 
+                            <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> 
+                            <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}> 
+                              {dadosPizza.map((e, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)} 
+                            </Bar> 
+                          </BarChart> 
+                        ) : ( 
+                          <BarChart data={dadosPizza} margin={{ top: 10, bottom: 10, left: -20 }}> 
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} /> 
+                            <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + '...' : v} /> 
+                            <YAxis type="number" hide /> 
+                            <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{ borderRadius: '15px', border: 'none', fontSize: '12px', fontWeight: '900' }} /> 
+                            <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={20}> 
+                              {dadosPizza.map((e, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)} 
+                            </Bar> 
+                          </BarChart> 
+                        )}
+                     </ResponsiveContainer>
+                   </div>
                  </div>
-                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6"> {dadosPizza.map(d => ( <div key={d.name} className="flex justify-between items-center text-[9px] sm:text-[10px] font-black border-b border-zinc-100 dark:border-zinc-800 pb-2"> <span className="truncate pr-2">{d.name}</span> <span className="text-primary-500 shrink-0">{d.percString}</span> </div> ))} </div>
+
+                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6"> 
+                   {dadosPizza.map((d, i) => ( 
+                     <div key={d.name} className="flex justify-between items-center text-[9px] sm:text-[10px] font-black border-b border-zinc-100 dark:border-zinc-800 pb-2"> 
+                       <div className="flex items-center gap-1.5 truncate pr-2">
+                         <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                         <span className="truncate" title={d.name}>{d.name}</span> 
+                       </div>
+                       <span className="text-primary-500 shrink-0">{d.percString}</span> 
+                     </div> 
+                   ))} 
+                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-10">
@@ -493,14 +594,9 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                    <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={meses.map((m, i) => ({ name: m, renda: data.receitas.filter(r=>r.mes===i && Number(r.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0), gastos: data.gastos.filter(g=>g.mes===i && Number(g.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0) }))} layout={isMobile ? "vertical" : "horizontal"} margin={{ left: isMobile ? -20 : 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={!isMobile} horizontal={isMobile} strokeOpacity={0.05} /> 
-                        
-                        {/* Correção 2: Os Eixos agora sabem se são de categoria ou número */}
                         <XAxis type={isMobile ? "number" : "category"} dataKey={isMobile ? undefined : "name"} hide={isMobile} tick={{fontSize: 9, fontWeight: '900'}} /> 
                         <YAxis type={isMobile ? "category" : "number"} dataKey={isMobile ? "name" : undefined} hide={!isMobile} tick={{fontSize: 9, fontWeight: '900'}} axisLine={false} tickLine={false} width={70} /> 
-                        
-                        {/* Correção 3: Tooltip agora formata o valor em R$ */}
                         <Tooltip formatter={(value) => formatar(value)} cursor={{fill: 'var(--color-bg-page)', opacity: 0.5}} contentStyle={{borderRadius: '15px', border: 'none', fontSize: '10px', fontWeight: '900'}} />
-                        
                         <Bar dataKey="renda" fill="#10b981" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20} /> 
                         <Bar dataKey="gastos" fill="#ef4444" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20} />
                       </BarChart>
