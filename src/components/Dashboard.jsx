@@ -71,18 +71,28 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [cNome, setCNome] = useState(''); const [cFechamento, setCFechamento] = useState('');
   const [rFonte, setRFonte] = useState(''); const [rValor, setRValor] = useState('');
   const [gCat, setGCat] = useState(''); const [gValor, setGValor] = useState('');
-  const [novaCatInput, setNovaCatInput] = useState('');
+  
   const [selectedCardId, setSelectedCardId] = useState('dinheiro');
   const [isUpdating, setIsUpdating] = useState(false);
   const [newUserName, setNewUserName] = useState(userName);
 
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
+
+  // --- NOVOS ESTADOS PARA A GAVETA DE CATEGORIAS ---
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [novaCatInput, setNovaCatInput] = useState('');
+  const [editingCat, setEditingCat] = useState({ oldName: '', newName: '' });
 
   const showToast = (message, type = 'success') => {
     setToast({ visible: true, message, type });
     setTimeout(() => {
       setToast(prev => ({ ...prev, visible: false }));
     }, 4000); 
+  };
+
+  const requestConfirmation = (title, message, onConfirm) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
   };
 
   const fetchDados = async () => {
@@ -189,12 +199,17 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     setMNome(''); setMValor(''); setEditingMensId(null); fetchDados();
   };
 
-  const deleteCartao = async (id) => { 
-    if (!window.confirm("Isso apagará o cartão e TODOS os gastos vinculados a ele. Continuar?")) return;
-    await supabase.from('gastos').delete().eq('cartao_id', id);
-    await supabase.from('cartoes').delete().eq('id', id); 
-    showToast("Cartão e histórico apagados.", "success");
-    fetchDados(); 
+  const deleteCartao = (id) => { 
+    requestConfirmation(
+      "Excluir Cartão?",
+      "Isso apagará o cartão e TODOS os gastos vinculados a ele. Essa ação não pode ser desfeita.",
+      async () => {
+        await supabase.from('gastos').delete().eq('cartao_id', id);
+        await supabase.from('cartoes').delete().eq('id', id); 
+        showToast("Cartão e histórico apagados.", "success");
+        fetchDados(); 
+      }
+    );
   };
 
   const addCartao = async () => {
@@ -205,6 +220,7 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     setCNome(''); setCFechamento(''); fetchDados();
   };
 
+  // --- NOVAS FUNÇÕES DA GAVETA DE CATEGORIAS ---
   const addCategoria = async () => { 
     if (!novaCatInput) return showToast("Digite um nome para a categoria!", "error"); 
     const { data: { user } } = await supabase.auth.getUser(); 
@@ -213,10 +229,41 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     setNovaCatInput(''); fetchDados(); 
   };
 
-  const removeCategoria = async (n) => { 
-    const { data: { user: authUser } } = await supabase.auth.getUser(); 
-    await supabase.from('categorias').delete().eq('user_id', authUser.id).eq('nome', n); 
-    fetchDados(); 
+  const handleUpdateCategoria = async (oldName, newName) => {
+    if (!newName || newName === oldName) {
+      setEditingCat({ oldName: '', newName: '' });
+      return;
+    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      // Atualiza o nome na tabela de Categorias
+      await supabase.from('categorias').update({ nome: newName }).eq('user_id', user.id).eq('nome', oldName);
+      // Cascata: Atualiza o nome em todos os gastos passados que usavam esse nome
+      await supabase.from('gastos').update({ categoria: newName }).eq('user_id', user.id).eq('categoria', oldName);
+      
+      // Se a categoria alterada estava selecionada no select de "Novo Gasto", atualiza ela lá também
+      if (gCat === oldName) setGCat(newName);
+
+      showToast("Categoria e histórico atualizados!", "success");
+      fetchDados();
+    } catch (err) {
+      showToast("Erro ao atualizar categoria.", "error");
+    }
+    setEditingCat({ oldName: '', newName: '' });
+  };
+
+  const removeCategoriaConfirm = (n) => { 
+    requestConfirmation(
+      "Excluir Categoria?",
+      `Tem certeza que deseja excluir "${n}"? Ela vai sumir das opções, mas seus gastos antigos continuarão intactos.`,
+      async () => {
+        const { data: { user: authUser } } = await supabase.auth.getUser(); 
+        await supabase.from('categorias').delete().eq('user_id', authUser.id).eq('nome', n); 
+        showToast("Categoria excluída.", "success");
+        if (gCat === n) setGCat(''); // Limpa o seletor se excluiu a que estava ativa
+        fetchDados(); 
+      }
+    );
   };
   
   const deleteItem = async (t, id) => { 
@@ -268,20 +315,25 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     }
   };
 
-  const handleDeleteAccount = async () => { 
-    if (!window.confirm("TEM CERTEZA? Essa ação vai deletar sua conta e TODOS os seus dados permanentemente.")) return; 
-    try {
-      const { data: { user } } = await supabase.auth.getUser(); 
-      await supabase.from('receitas').delete().eq('user_id', user.id); 
-      await supabase.from('gastos').delete().eq('user_id', user.id); 
-      await supabase.from('categorias').delete().eq('user_id', user.id); 
-      await supabase.from('mensalidades').delete().eq('user_id', user.id); 
-      await supabase.from('cartoes').delete().eq('user_id', user.id); 
-      showToast("Conta excluída. Redirecionando...", "success");
-      setTimeout(() => onLogout(), 1500);
-    } catch (err) {
-      showToast("Erro ao excluir a conta.", "error");
-    }
+  const handleDeleteAccount = () => { 
+    requestConfirmation(
+      "Excluir Conta Permanentemente?",
+      "TEM CERTEZA? Essa ação vai deletar sua conta e TODOS os seus dados de forma irreversível.",
+      async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser(); 
+          await supabase.from('receitas').delete().eq('user_id', user.id); 
+          await supabase.from('gastos').delete().eq('user_id', user.id); 
+          await supabase.from('categorias').delete().eq('user_id', user.id); 
+          await supabase.from('mensalidades').delete().eq('user_id', user.id); 
+          await supabase.from('cartoes').delete().eq('user_id', user.id); 
+          showToast("Conta excluída. Redirecionando...", "success");
+          setTimeout(() => onLogout(), 1500);
+        } catch (err) {
+          showToast("Erro ao excluir a conta.", "error");
+        }
+      }
+    );
   };
 
   const isMobile = window.innerWidth < 768;
@@ -331,6 +383,72 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
           -webkit-tap-highlight-color: transparent !important;
         }
       `}</style>
+
+      {/* --- MODAL DE GERENCIAMENTO DE CATEGORIAS --- */}
+      <AnimatePresence>
+        {isCatModalOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[2rem] p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg sm:text-xl font-black flex items-center gap-2"><Settings size={20} className="text-primary-500"/> Categorias</h2>
+                <button onClick={() => setIsCatModalOpen(false)} className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full hover:scale-110 transition-all"><X size={16}/></button>
+              </div>
+              
+              <div className="flex gap-2 mb-6">
+                <input value={novaCatInput} onChange={e=>setNovaCatInput(e.target.value)} placeholder="Criar nova categoria..." className="flex-1 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-bold text-xs sm:text-sm" />
+                <button onClick={addCategoria} className="p-3 sm:p-4 bg-primary-600 text-white rounded-xl sm:rounded-2xl hover:scale-105 transition-all flex items-center justify-center"><Plus size={18}/></button>
+              </div>
+
+              <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                {data.cats.length === 0 ? <p className="text-center text-xs text-zinc-500 py-4 font-bold">Nenhuma categoria criada.</p> : null}
+                {data.cats.map(c => (
+                  <div key={c} className="flex justify-between items-center p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl border border-[var(--color-border)] transition-all group">
+                    {editingCat.oldName === c ? (
+                      <div className="flex flex-1 gap-2 mr-2">
+                        <input 
+                          autoFocus
+                          value={editingCat.newName} 
+                          onChange={(e) => setEditingCat({...editingCat, newName: e.target.value})} 
+                          className="flex-1 bg-transparent outline-none font-black text-xs sm:text-sm text-primary-500 border-b border-primary-500/30 pb-1"
+                        />
+                      </div>
+                    ) : (
+                      <span className="font-black text-xs sm:text-sm truncate uppercase">{c}</span>
+                    )}
+                    
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      {editingCat.oldName === c ? (
+                        <button onClick={() => handleUpdateCategoria(editingCat.oldName, editingCat.newName)} className="p-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all"><Save size={14}/></button>
+                      ) : (
+                        <button onClick={() => setEditingCat({oldName: c, newName: c})} className="p-2 text-zinc-400 hover:text-primary-500 rounded-xl transition-all"><Edit2 size={14}/></button>
+                      )}
+                      <button onClick={() => removeCategoriaConfirm(c)} className="p-2 text-zinc-400 hover:text-red-500 rounded-xl transition-all"><Trash2 size={14}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {confirmModal.isOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[2rem] p-6 sm:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6 text-red-500">
+                <AlertCircle size={32} />
+              </div>
+              <h2 className="text-lg sm:text-xl font-black mb-2">{confirmModal.title}</h2>
+              <p className="text-xs sm:text-sm text-zinc-400 mb-8">{confirmModal.message}</p>
+              <div className="flex gap-3 w-full">
+                <button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase bg-[var(--color-bg-page)] border border-[var(--color-border)] hover:bg-zinc-800 transition-all text-white">Cancelar</button>
+                <button onClick={() => { confirmModal.onConfirm(); setConfirmModal({ ...confirmModal, isOpen: false }); }} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase bg-red-500 hover:bg-red-600 transition-all text-white shadow-lg shadow-red-500/20">Excluir</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {toast.visible && (
@@ -396,10 +514,11 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                       <SeletorAnimado value={selectedCardId === 'dinheiro' ? "Dinheiro" : data.cartoes.find(c => c.id === selectedCardId)?.nome} options={["Dinheiro", ...data.cartoes.map(c => c.nome)]} onChange={(v) => setSelectedCardId(v === "Dinheiro" ? "dinheiro" : data.cartoes.find(c => c.nome === v).id)} icon={CreditCard} className="flex-1 sm:w-40 min-w-0" />
                       <button onClick={addGasto} className="p-3 sm:p-4 w-full sm:w-auto bg-primary-600 text-white rounded-xl sm:rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus size={18}/></button>
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-3 border-t border-[var(--color-border)] pt-3 sm:pt-4 flex-wrap">
-                      <input value={novaCatInput} onChange={e=>setNovaCatInput(e.target.value)} placeholder="Nova categoria..." className="flex-1 text-[10px] sm:text-xs bg-transparent border-b border-[var(--color-border)] outline-none min-w-[120px]" />
-                      <button onClick={addCategoria} className="text-[9px] sm:text-[10px] font-black text-primary-500 uppercase shrink-0">+ Add</button>
-                      <div className="flex flex-wrap gap-2 w-full mt-2"> {data.cats.map(c => ( <span key={c} className="px-2 py-1 sm:px-3 sm:py-1 bg-[var(--color-bg-icon)] text-[8px] sm:text-[9px] font-black rounded-full flex items-center gap-1 sm:gap-2"> {c} <button onClick={() => removeCategoria(c)}><X size={10}/></button> </span> ))} </div>
+                    {/* --- BOTÃO DE GERENCIAR CATEGORIAS --- */}
+                    <div className="flex items-center justify-end border-t border-[var(--color-border)] pt-3 sm:pt-4">
+                      <button onClick={() => setIsCatModalOpen(true)} type="button" className="text-[10px] sm:text-xs font-black text-primary-500 uppercase flex items-center gap-1.5 hover:text-primary-400 transition-colors">
+                        <Settings size={14} /> Gerenciar Categorias
+                      </button>
                     </div>
                   </div>
                 </CardInput>
@@ -535,7 +654,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.05} /> 
                             <XAxis type="number" hide /> 
                             <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} width={90} interval={0} tickFormatter={(v) => v.length > 12 ? v.substring(0, 12) + '...' : v} padding={{ top: 10, bottom: 10 }} /> 
-                            {/* CORREÇÃO DO ERRO DO CONSOLE AQUI */}
                             <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} content={() => null} />
                             <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}> 
                               {dadosPizza.map((e, i) => (
@@ -558,7 +676,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                             <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} /> 
                             <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} interval={0} padding={{ left: 20, right: 20 }} tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + '...' : v} /> 
                             <YAxis type="number" hide /> 
-                            {/* CORREÇÃO DO ERRO DO CONSOLE AQUI */}
                             <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} content={() => null} />
                             <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={20}> 
                               {dadosPizza.map((e, i) => (
@@ -675,7 +792,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                         <XAxis type={isMobile ? "number" : "category"} dataKey={isMobile ? undefined : "name"} hide={isMobile} tick={{fontSize: 9, fontWeight: '900'}} padding={{ left: 20, right: 20 }} interval={0} tickFormatter={(v) => v.substring(0,3)} /> 
                         <YAxis type={isMobile ? "category" : "number"} dataKey={isMobile ? "name" : undefined} hide={!isMobile} tick={{fontSize: 9, fontWeight: '900'}} axisLine={false} tickLine={false} width={70} interval={0} padding={{ top: 10, bottom: 10 }} /> 
                         
-                        {/* CORREÇÃO DO ERRO DO CONSOLE AQUI TAMBÉM */}
                         <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} content={() => null} />
                         
                         <Bar dataKey="renda" fill="#10b981" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20}>
