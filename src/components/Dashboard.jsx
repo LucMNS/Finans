@@ -6,13 +6,17 @@ import {
   PieChart as PieChartIcon, Settings, User, Save, List, Search,
   Power, Edit2, CreditCard, CheckCircle2, Banknote, AlertCircle
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Sector } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Sector } from 'recharts';
 import { supabase } from '../lib/supabase';
 
 // --- CONSTANTES E CORES ---
 const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const anos = ["2024", "2025", "2026", "2027", "2028", "2029", "2030"];
-const CHART_COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#3b82f6', '#f97316', '#8b5cf6', '#14b8a6', '#eab308', '#d946ef', '#0ea5e9', '#ef4444', '#84cc16'];
+const CHART_COLORS = [
+  '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#3b82f6', '#f97316', '#8b5cf6', '#14b8a6', 
+  '#eab308', '#d946ef', '#0ea5e9', '#ef4444', '#84cc16', '#06b6d4', '#f43f5e', '#a855f7', 
+  '#059669', '#4f46e5', '#ea580c', '#db2777', '#2563eb', '#c026d3', '#0284c7', '#dc2626'
+];
 
 function SeletorAnimado({ value, options, onChange, icon: Icon, className = "" }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,7 +62,7 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
   const [searchTermCredito, setSearchTermCredito] = useState("");
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [activeMonthIndex, setActiveMonthIndex] = useState(new Date().getMonth()); // Para o gráfico de Análises
+  const [activeMonthIndex, setActiveMonthIndex] = useState(new Date().getMonth()); 
 
   const [data, setData] = useState({ receitas: [], gastos: [], cats: [], mensalidades: [], cartoes: [] });
 
@@ -123,7 +127,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     gastos: data.gastos.filter(g=>g.mes===i && Number(g.ano)===Number(selectedYear)).reduce((a,b)=>a+b.valor,0)
   })), [data, selectedYear]);
 
-  // Reseta os estados quando muda a data
   useEffect(() => { setActiveIndex(0); }, [selectedMonth, selectedYear, distView]);
 
   const pagarFatura = async (cartaoId) => {
@@ -291,18 +294,30 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     if (typeof index === 'number') setActiveMonthIndex(index);
   };
 
+  const handleBarChartInteraction = (state) => {
+    if (state && state.activeTooltipIndex !== undefined && state.activeTooltipIndex !== null) {
+      setActiveIndex(state.activeTooltipIndex);
+    }
+  };
+
+  const handleAnaliseInteraction = (state) => {
+    if (state && state.activeTooltipIndex !== undefined && state.activeTooltipIndex !== null) {
+      setActiveMonthIndex(state.activeTooltipIndex);
+    }
+  };
+
   const renderActiveShape = (props) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
     return (
-      <g>
+      <g style={{ outline: 'none', pointerEvents: 'none', userSelect: 'none' }}>
         <text x={cx} y={cy - 4} textAnchor="middle" fill={fill} className="text-[10px] sm:text-[11px] font-black uppercase">
           {payload.name.length > 12 ? payload.name.substring(0, 12) + '...' : payload.name}
         </text>
         <text x={cx} y={cy + 12} textAnchor="middle" fill="#a1a1aa" className="text-[9px] sm:text-[10px] font-bold">
           {formatar(value)}
         </text>
-        <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} cornerRadius={6} />
-        <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 12} outerRadius={outerRadius + 16} fill={fill} cornerRadius={4} />
+        <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} cornerRadius={6} style={{ outline: 'none' }} />
+        <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 12} outerRadius={outerRadius + 16} fill={fill} cornerRadius={4} style={{ outline: 'none' }} />
       </g>
     );
   };
@@ -461,7 +476,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                 <ResumoItem label="Despesas" value={formatar(totalExpenses)} color="text-red-500" icon={<TrendingUp size={18}/>}/>
               </div>
 
-              {/* GRÁFICO DINÂMICO UNIFICADO COM PLACAR FLUTUANTE AJUSTADO */}
               <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm relative overflow-visible lg:col-span-1">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 pr-2"> 
                    <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Gráfico por Categoria</h3>
@@ -472,7 +486,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                    </div>
                  </div>
 
-                 {/* CORREÇÃO DO POSICIONAMENTO: Empurrado um pouco para baixo no Desktop */}
                  {distView !== 'pie' && dadosPizza.length > 0 && dadosPizza[activeIndex] && (
                    <div className="absolute top-[88px] right-6 sm:top-[90px] sm:right-10 lg:top-[110px] lg:right-12 bg-[var(--color-bg-page)]/90 backdrop-blur-md border border-[var(--color-border)] px-4 py-2 rounded-2xl shadow-xl z-20 flex flex-col items-end pointer-events-none transition-all">
                      <span className="text-[10px] sm:text-xs font-black uppercase" style={{ color: CHART_COLORS[activeIndex % CHART_COLORS.length] }}>
@@ -513,41 +526,47 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                           </PieChart> 
                         ) : 
                         distView === 'horizontal' ? ( 
-                          <BarChart layout="vertical" data={dadosPizza} margin={{ left: 0, right: 30, top: 20, bottom: 20 }}> 
+                          <BarChart layout="vertical" data={dadosPizza} margin={{ left: 0, right: 30, top: 20, bottom: 20 }}
+                            onMouseMove={handleBarChartInteraction}
+                            onClick={handleBarChartInteraction}
+                            onTouchStart={handleBarChartInteraction}
+                            onTouchMove={handleBarChartInteraction}
+                          > 
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.05} /> 
                             <XAxis type="number" hide /> 
                             <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} width={90} interval={0} tickFormatter={(v) => v.length > 12 ? v.substring(0, 12) + '...' : v} padding={{ top: 10, bottom: 10 }} /> 
-                            {/* TOOLTIP NATIVO REMOVIDO PARA USAR O PLACAR FLUTUANTE */}
+                            {/* CORREÇÃO DO ERRO DO CONSOLE AQUI */}
+                            <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} content={() => null} />
                             <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}> 
                               {dadosPizza.map((e, i) => (
                                 <Cell 
                                   key={i} 
                                   fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                   fillOpacity={activeIndex === i ? 1 : 0.3}
-                                  onClick={() => handleChartClick(null, i)}
-                                  onTouchStart={() => handleChartClick(null, i)}
-                                  onMouseEnter={() => handleChartClick(null, i)}
-                                  className="cursor-pointer transition-all duration-300"
+                                  className="transition-all duration-300"
                                 />
                               ))} 
                             </Bar> 
                           </BarChart> 
                         ) : ( 
-                          <BarChart data={dadosPizza} margin={{ top: 20, bottom: 20, left: -20, right: 10 }}> 
+                          <BarChart data={dadosPizza} margin={{ top: 20, bottom: 20, left: -20, right: 10 }}
+                            onMouseMove={handleBarChartInteraction}
+                            onClick={handleBarChartInteraction}
+                            onTouchStart={handleBarChartInteraction}
+                            onTouchMove={handleBarChartInteraction}
+                          > 
                             <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} /> 
                             <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '900'}} interval={0} padding={{ left: 20, right: 20 }} tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + '...' : v} /> 
                             <YAxis type="number" hide /> 
-                            {/* TOOLTIP NATIVO REMOVIDO PARA USAR O PLACAR FLUTUANTE */}
+                            {/* CORREÇÃO DO ERRO DO CONSOLE AQUI */}
+                            <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} content={() => null} />
                             <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={20}> 
                               {dadosPizza.map((e, i) => (
                                 <Cell 
                                   key={i} 
                                   fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                   fillOpacity={activeIndex === i ? 1 : 0.3}
-                                  onClick={() => handleChartClick(null, i)}
-                                  onTouchStart={() => handleChartClick(null, i)}
-                                  onMouseEnter={() => handleChartClick(null, i)}
-                                  className="cursor-pointer transition-all duration-300"
+                                  className="transition-all duration-300"
                                 />
                               ))} 
                             </Bar> 
@@ -559,7 +578,10 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
 
                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6"> 
                    {dadosPizza.map((d, i) => ( 
-                     <div key={d.name} className="flex justify-between items-center text-[9px] sm:text-[10px] font-black border-b border-zinc-100 dark:border-zinc-800 pb-2"> 
+                     <div key={d.name} 
+                          onClick={() => setActiveIndex(i)}
+                          onMouseEnter={() => setActiveIndex(i)}
+                          className={`flex justify-between items-center text-[9px] sm:text-[10px] font-black border-b border-zinc-100 dark:border-zinc-800 pb-2 cursor-pointer transition-all ${activeIndex === i ? 'bg-primary-500/10 rounded-lg px-2 -mx-2 border-transparent' : ''}`}> 
                        <div className="flex items-center gap-1.5 truncate pr-2">
                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                          <span className="truncate" title={d.name}>{d.name}</span> 
@@ -621,7 +643,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
           ) : activeTab === 'analises' ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-10 text-center relative">
               
-              {/* PLACAR FLUTUANTE DA ANÁLISE ANUAL (mantido como estava pois não cobre botões) */}
               {analisesData.length > 0 && analisesData[activeMonthIndex] && (
                 <div className="absolute top-4 right-4 sm:top-8 sm:right-8 bg-[var(--color-bg-page)]/90 backdrop-blur-md border border-[var(--color-border)] px-4 py-3 rounded-2xl shadow-xl z-20 flex flex-col items-end pointer-events-none transition-all">
                   <span className="text-[10px] sm:text-xs font-black uppercase text-zinc-300 mb-2">
@@ -644,35 +665,27 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                  <h3 className="text-lg sm:text-2xl font-black mb-12 sm:mb-16 text-left uppercase tracking-tighter">Análise Mensal</h3>
                  <div className="h-[400px] sm:h-[500px] w-full">
                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={analisesData} layout={isMobile ? "vertical" : "horizontal"} margin={{ left: isMobile ? -20 : 0, bottom: 20 }}>
+                      <BarChart data={analisesData} layout={isMobile ? "vertical" : "horizontal"} margin={{ left: isMobile ? -20 : 0, bottom: 20 }}
+                        onMouseMove={handleAnaliseInteraction}
+                        onClick={handleAnaliseInteraction}
+                        onTouchStart={handleAnaliseInteraction}
+                        onTouchMove={handleAnaliseInteraction}
+                      >
                         <CartesianGrid strokeDasharray="3 3" vertical={!isMobile} horizontal={isMobile} strokeOpacity={0.05} /> 
                         <XAxis type={isMobile ? "number" : "category"} dataKey={isMobile ? undefined : "name"} hide={isMobile} tick={{fontSize: 9, fontWeight: '900'}} padding={{ left: 20, right: 20 }} interval={0} tickFormatter={(v) => v.substring(0,3)} /> 
                         <YAxis type={isMobile ? "category" : "number"} dataKey={isMobile ? "name" : undefined} hide={!isMobile} tick={{fontSize: 9, fontWeight: '900'}} axisLine={false} tickLine={false} width={70} interval={0} padding={{ top: 10, bottom: 10 }} /> 
                         
-                        {/* TOOLTIP NATIVO REMOVIDO DAQUI TAMBÉM */}
+                        {/* CORREÇÃO DO ERRO DO CONSOLE AQUI TAMBÉM */}
+                        <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} content={() => null} />
                         
                         <Bar dataKey="renda" fill="#10b981" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20}>
                           {analisesData.map((e, i) => (
-                            <Cell 
-                              key={`renda-${i}`} 
-                              fillOpacity={activeMonthIndex === i ? 1 : 0.3}
-                              onClick={() => handleAnaliseClick(null, i)}
-                              onTouchStart={() => handleAnaliseClick(null, i)}
-                              onMouseEnter={() => handleAnaliseClick(null, i)}
-                              className="cursor-pointer transition-all duration-300"
-                            />
+                            <Cell key={`renda-${i}`} fillOpacity={activeMonthIndex === i ? 1 : 0.3} className="transition-all duration-300" />
                           ))}
                         </Bar> 
                         <Bar dataKey="gastos" fill="#ef4444" radius={isMobile ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={isMobile ? 12 : 20}>
                           {analisesData.map((e, i) => (
-                            <Cell 
-                              key={`gastos-${i}`} 
-                              fillOpacity={activeMonthIndex === i ? 1 : 0.3}
-                              onClick={() => handleAnaliseClick(null, i)}
-                              onTouchStart={() => handleAnaliseClick(null, i)}
-                              onMouseEnter={() => handleAnaliseClick(null, i)}
-                              className="cursor-pointer transition-all duration-300"
-                            />
+                            <Cell key={`gastos-${i}`} fillOpacity={activeMonthIndex === i ? 1 : 0.3} className="transition-all duration-300" />
                           ))}
                         </Bar>
                       </BarChart>
