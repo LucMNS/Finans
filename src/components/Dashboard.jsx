@@ -70,7 +70,11 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
 
   const [mNome, setMNome] = useState(''); const [mValor, setMValor] = useState('');
   const [editingMensId, setEditingMensId] = useState(null);
-  const [cNome, setCNome] = useState(''); const [cFechamento, setCFechamento] = useState('');
+  
+  // --- ESTADOS DO CARTÃO (Incluindo memória de Edição) ---
+  const [cNome, setCNome] = useState(''); const [cFechamento, setCFechamento] = useState(''); const [cLimite, setCLimite] = useState('');
+  const [editingCardId, setEditingCardId] = useState(null);
+  
   const [rFonte, setRFonte] = useState(''); const [rValor, setRValor] = useState('');
   const [gCat, setGCat] = useState(''); const [gValor, setGValor] = useState('');
   const [novaCatInput, setNovaCatInput] = useState('');
@@ -208,6 +212,37 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
     setMNome(''); setMValor(''); setEditingMensId(null); fetchDados();
   };
 
+  // --- NOVA FUNÇÃO MISTA: ADICIONAR OU ATUALIZAR CARTÃO ---
+  const addOrUpdateCartao = async () => {
+    if (!cNome || !cFechamento) return showToast("Preencha o nome e o dia de fechamento!", "error");
+    // Extrai o valor formatando possíveis pontos e vírgulas
+    const limiteFormatado = cLimite ? parseFloat(cLimite.toString().replace(/\./g, '').replace(',', '.')) : null;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (editingCardId) {
+      // ATUALIZAR CARTÃO EXISTENTE
+      await supabase.from('cartoes').update({ 
+        nome: cNome, 
+        dia_fechamento: parseInt(cFechamento),
+        limite_pessoal: limiteFormatado
+      }).eq('id', editingCardId);
+      showToast("Cartão atualizado!", "success");
+    } else {
+      // CRIAR NOVO CARTÃO
+      await supabase.from('cartoes').insert([{ 
+        user_id: user.id, 
+        nome: cNome, 
+        dia_fechamento: parseInt(cFechamento),
+        limite_pessoal: limiteFormatado 
+      }]);
+      showToast("Cartão adicionado!", "success");
+    }
+    
+    // Limpar os campos após salvar
+    setCNome(''); setCFechamento(''); setCLimite(''); setEditingCardId(null); fetchDados();
+  };
+
   const deleteCartao = (id) => { 
     requestConfirmation(
       "Excluir Cartão?",
@@ -219,14 +254,6 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
         fetchDados(); 
       }
     );
-  };
-
-  const addCartao = async () => {
-    if (!cNome || !cFechamento) return showToast("Preencha o nome e o dia de fechamento!", "error");
-    const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('cartoes').insert([{ user_id: user.id, nome: cNome, dia_fechamento: parseInt(cFechamento) }]);
-    showToast("Cartão adicionado!", "success");
-    setCNome(''); setCFechamento(''); fetchDados();
   };
 
   const addCategoria = async () => { 
@@ -553,10 +580,16 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
               <div className="bg-[var(--color-bg-card)] p-4 sm:p-6 lg:p-10 rounded-3xl lg:rounded-[2.5rem] border border-[var(--color-border)] shadow-sm">
                 <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60 mb-6 flex items-center gap-2"><CreditCard size={14} className="text-primary-500" /> Cartão de Crédito</h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 h-fit">
-                    <input value={cNome} onChange={e=>setCNome(e.target.value)} placeholder="Nome do Cartão" className="flex-1 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-bold text-xs sm:text-sm min-w-0" />
-                    <input value={cFechamento} onChange={e=>setCFechamento(e.target.value)} placeholder="Dia Fech." className="w-full sm:w-32 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-black text-xs sm:text-sm min-w-0" />
-                    <button onClick={addCartao} className="p-3 sm:p-4 w-full sm:w-auto bg-primary-600 text-white rounded-xl sm:rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0"><Plus size={16}/></button>
+                  {/* --- ATUALIZADO: CAMPO COM BOTÃO DE EDIÇÃO INTELIGENTE --- */}
+                  <div className="flex flex-col gap-2 sm:gap-3 h-fit">
+                    <input value={cNome} onChange={e=>setCNome(e.target.value)} placeholder="Nome do Cartão" className="w-full p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-bold text-xs sm:text-sm min-w-0" />
+                    <div className="flex gap-2 sm:gap-3">
+                      <input value={cFechamento} onChange={e=>setCFechamento(e.target.value)} placeholder="Dia Fech." className="w-24 sm:w-32 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-black text-xs sm:text-sm min-w-0" />
+                      <input value={cLimite} onChange={e=>setCLimite(e.target.value)} placeholder="Meta (Opcional)" className="flex-1 p-3 sm:p-4 bg-[var(--color-bg-page)] rounded-xl sm:rounded-2xl outline-none font-black text-xs sm:text-sm min-w-0" />
+                      <button onClick={addOrUpdateCartao} className="p-3 sm:p-4 bg-primary-600 text-white rounded-xl sm:rounded-2xl hover:scale-105 active:scale-95 transition-all flex justify-center shrink-0">
+                        {editingCardId ? <Save size={16}/> : <Plus size={16}/>}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2 sm:space-y-3 max-h-40 sm:max-h-48 overflow-y-auto custom-scrollbar pr-1 sm:pr-2">
                     {data.cartoes.map(c => {
@@ -569,19 +602,51 @@ export default function Dashboard({ userName, toggleDarkMode, isDarkMode, onLogo
                       const isMesPassado = (Number(selectedYear) < agora.getFullYear()) || (Number(selectedYear) === agora.getFullYear() && selectedMonth < agora.getMonth());
                       const isVencido = (isMesAtual && agora.getDate() > c.dia_fechamento && !isPago && totalC > 0) || (isMesPassado && !isPago && totalC > 0);
 
+                      // --- NOVA RÉGUA (75%) DA BARRA DE PROGRESSO ---
+                      const limite = c.limite_pessoal;
+                      const pct = limite ? Math.min((totalC / limite) * 100, 100) : 0;
+                      const isNearLimit = limite && totalC >= limite * 0.75 && totalC < limite;
+                      const isOverLimit = limite && totalC >= limite;
+
                       return (
-                        <div key={c.id} className={`flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all ${isPago ? 'bg-emerald-500/10 border-emerald-500/50' : isVencido ? 'bg-red-500/10 border-red-500/50 animate-pulse-subtle' : 'bg-[var(--color-bg-page)] border-primary-500/10'}`}>
-                          <div className="flex-1 w-full sm:w-auto flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start"> 
-                            <div>
-                              <p className={`font-black text-[9px] sm:text-[10px] uppercase ${isPago ? 'text-emerald-500' : isVencido ? 'text-red-500' : ''}`}>{c.nome} {isPago ? '(PAGO)' : isVencido ? '(FECHADO)' : ''}</p> 
-                              <p className="text-[11px] sm:text-[12px] font-black">{formatar(totalC)}</p> 
+                        <div key={c.id} className={`flex flex-col p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all ${isPago ? 'bg-emerald-500/10 border-emerald-500/50' : isVencido ? 'bg-red-500/10 border-red-500/50 animate-pulse-subtle' : 'bg-[var(--color-bg-page)] border-primary-500/10'}`}>
+                          <div className="flex flex-row justify-between items-start sm:items-center w-full">
+                            <div className="flex-1 w-full sm:w-auto flex flex-col justify-start items-start"> 
+                              <div>
+                                <p className={`font-black text-[9px] sm:text-[10px] uppercase ${isPago ? 'text-emerald-500' : isVencido ? 'text-red-500' : ''}`}>{c.nome} {isPago ? '(PAGO)' : isVencido ? '(FECHADO)' : ''}</p> 
+                                <p className="text-[11px] sm:text-[12px] font-black">{formatar(totalC)}</p> 
+                              </div>
+                              <p className="text-[8px] opacity-40 font-bold uppercase mt-0 sm:mt-1">Fecha dia {c.dia_fechamento}</p>
                             </div>
-                            <p className="text-[8px] opacity-40 font-bold uppercase mt-0 sm:mt-1">Fecha dia {c.dia_fechamento}</p>
+                            <div className="flex gap-2 w-full sm:w-auto justify-end mt-1 sm:mt-0"> 
+                              {!isPago && totalC > 0 && ( <button onClick={() => pagarFatura(c.id)} className={`px-3 py-1.5 sm:px-4 sm:py-2 text-white rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase flex items-center gap-1 sm:gap-2 shadow-lg hover:scale-105 transition-all ${isVencido ? 'bg-red-500' : 'bg-emerald-500'}`}> <CheckCircle2 size={12}/> Pagar </button> )}
+                              {/* --- BOTÃO DE EDITAR CARTÃO --- */}
+                              <button onClick={() => {
+                                setEditingCardId(c.id);
+                                setCNome(c.nome);
+                                setCFechamento(c.dia_fechamento.toString());
+                                setCLimite(c.limite_pessoal ? c.limite_pessoal.toString().replace('.', ',') : '');
+                              }} className="p-1.5 sm:p-2 text-zinc-400 hover:text-primary-500"><Edit2 size={14}/></button> 
+                              <button onClick={() => deleteCartao(c.id)} className="p-1.5 sm:p-2 text-zinc-400 hover:text-red-500"><Trash2 size={14}/></button> 
+                            </div>
                           </div>
-                          <div className="flex gap-2 w-full sm:w-auto justify-end mt-1 sm:mt-0"> 
-                            {!isPago && totalC > 0 && ( <button onClick={() => pagarFatura(c.id)} className={`px-3 py-1.5 sm:px-4 sm:py-2 text-white rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase flex items-center gap-1 sm:gap-2 shadow-lg hover:scale-105 transition-all ${isVencido ? 'bg-red-500' : 'bg-emerald-500'}`}> <CheckCircle2 size={12}/> Pagar </button> )}
-                            <button onClick={() => deleteCartao(c.id)} className="p-1.5 sm:p-2 text-zinc-400 hover:text-red-500"><Trash2 size={14}/></button> 
-                          </div>
+                          
+                          {limite > 0 && (
+                            <div className="mt-3 w-full">
+                               <div className="flex justify-between text-[8px] sm:text-[9px] font-black uppercase mb-1">
+                                  <span className={isOverLimit ? 'text-red-500' : isNearLimit ? 'text-amber-500' : 'text-primary-500'}>
+                                    {isOverLimit ? 'Meta Ultrapassada!' : isNearLimit ? 'Atenção à meta!' : 'Meta de gastos'}
+                                  </span>
+                                  <span className="opacity-50">{formatar(totalC)} / {formatar(limite)}</span>
+                               </div>
+                               <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full transition-all duration-500 ${isOverLimit ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : 'bg-primary-500'}`} 
+                                    style={{ width: `${pct}%` }} 
+                                  />
+                               </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
