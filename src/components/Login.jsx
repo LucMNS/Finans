@@ -37,12 +37,15 @@ export default function Login({ modeOverride, onFinishedUpdate }) {
     wrapperRef.current.style.setProperty('--mouse-y', `${clientY}px`);
   };
 
-  const handleOAuth = async (provider) => {
+ const handleOAuth = async (provider) => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({ 
         provider,
         options: {
-          redirectTo: window.location.origin 
+          redirectTo: window.location.origin,
+          queryParams: {
+            prompt: 'select_account' // <-- ESSA É A MÁGICA
+          }
         }
       });
       if (error) throw error;
