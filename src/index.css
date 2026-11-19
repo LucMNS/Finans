@@ -1,43 +1,109 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --color-primary-500: #8b5cf6;
   --color-primary-600: #7c3aed;
-  
-  --color-bg-page: #f1f5f9; 
-  --color-bg-card: #ffffff; 
-  --color-bg-icon: #e2e8f0; 
-  --color-text-main: #000000; 
-  --color-text-sub: #334155;
-  --color-border: #cbd5e1;
+}
+
+:root {
+  --bg-canvas: #f5f7fa;
+  --bg-surface: #ffffff;
+  --bg-elevated: #eef2f7;
+  --bg-glass: rgba(255, 255, 255, 0.82);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.08);
+  --shadow-float: 0 20px 50px -12px rgba(15, 23, 42, 0.18);
+  color-scheme: light;
 }
 
 .dark {
-  --color-bg-page: #020617;
-  --color-bg-card: #0f172a;
-  --color-bg-icon: #1e293b;
-  --color-text-main: #ffffff;
-  --color-text-sub: #94a3b8;
-  --color-border: #1e293b;
+  --bg-canvas: #070b14;
+  --bg-surface: #0f1624;
+  --bg-elevated: #172033;
+  --bg-glass: rgba(15, 22, 36, 0.82);
+  --border-subtle: rgba(148, 163, 184, 0.14);
+  --border-strong: rgba(148, 163, 184, 0.24);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px -16px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 24px 60px -12px rgba(0, 0, 0, 0.72);
+  color-scheme: dark;
 }
 
-body {
-  background-color: var(--color-bg-page);
-  color: var(--color-text-main);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  @apply transition-colors duration-300 overflow-x-hidden;
+@layer base {
+  html,
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+
+  * {
+    border-color: var(--border-subtle);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid rgba(139, 92, 246, 0.55);
+    outline-offset: 2px;
+  }
 }
 
-input, select, textarea {
-  color: var(--color-text-main);
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-option {
-  background-color: var(--color-bg-card);
-  color: var(--color-text-main);
+/* Remove totalmente anéis de foco e destaque nativo de toque em gráficos SVG/Recharts */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface,
+.recharts-sector,
+.recharts-pie-sector,
+.recharts-bar-rectangle,
+svg g {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
-* {
-  border-color: var(--color-border);
+/* Scrollbar minimalista */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
 }
