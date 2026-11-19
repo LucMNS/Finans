@@ -8,6 +8,8 @@ Aplicação web progressiva (PWA) para gestão financeira pessoal, controle de c
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL_%26_Auth-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=flat-square&logo=pwa&logoColor=white)
 
+Acesse: https://finans-controle.vercel.app/
+
 ---
 
 ## Visão Geral e Funcionalidades
